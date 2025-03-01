@@ -13,5 +13,5 @@ WORKDIR /app
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
 USER nonroot
-EXPOSE 8080
+EXPOSE 8000
 CMD [ "dist/index.js" ]

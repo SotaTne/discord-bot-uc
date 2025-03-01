@@ -23,7 +23,9 @@ export const acceptRolls: string[] = [
 export const leastRoleName = "試合数5";
 export const startBeforeLimitMinutes = 7;
 
-export const PORT = 8080;
+export const PORT: number = process.env.PORT
+  ? parseInt(process.env.PORT)
+  : 8000;
 
 export const getJPDate = () => {
   const now = new Date();

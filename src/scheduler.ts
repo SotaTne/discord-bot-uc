@@ -14,14 +14,14 @@ dotenv.config();
 export const TARGET_CHANNEL_ID = process.env.TARGET_CHANNEL_ID;
 export const TARGET_GUILD_ID = process.env.TARGET_GUILD_ID;
 
-let schedulerEnabled = true;
+const schedulerEnabled = true;
 
 // 各時間のスケジュールを保存するオブジェクト
 const jobs: CronJob[] = [];
 
 // すべてのスケジュールを設定
 export function setupSchedules(client: Client) {
-  startOclocks.forEach((hour, index) => {
+  startOclocks.forEach((hour) => {
     // CronJob形式での時間指定 (秒 分 時 日 月 曜日)
     // 日本時間を指定するため、タイムゾーンを'Asia/Tokyo'に設定
     //const cronTime = `0 0 ${hour} * * *`; // 毎日hour時00分00秒に実行

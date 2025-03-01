@@ -85,8 +85,8 @@ export async function execute(interaction: CommandInteraction) {
       return;
     }
 
-    let leastRoleTeams: Role[] = [];
-    let normalRoleTeams: Role[] = [];
+    const leastRoleTeams: Role[] = [];
+    const normalRoleTeams: Role[] = [];
     teamRoles.forEach((teamRole) => {
       if (
         teamRole.members.every((member: GuildMember) =>
