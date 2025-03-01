@@ -22,7 +22,19 @@ export async function execute(interaction: CommandInteraction) {
   }
 
   const validTimeRoles = getAllTimeRoleNames();
-  const caller = interaction.member as GuildMember;
+  let caller = interaction.member as GuildMember;
+  if (!(caller instanceof GuildMember)) {
+    await interaction.editReply("エラー: ユーザー情報を取得できませんでした。");
+    return;
+  }
+
+  // メンバー情報を再取得して最新の権限を確認
+  caller = await guild.members.fetch(caller.user.id);
+  if (!caller) {
+    await interaction.editReply("エラー: ユーザー情報を取得できませんでした。");
+    return;
+  }
+
   if (!caller.permissions.has(PermissionsBitField.Flags.Administrator)) {
     await interaction.editReply(
       "管理者権限を持たないユーザーはこのコマンドを使えません"
