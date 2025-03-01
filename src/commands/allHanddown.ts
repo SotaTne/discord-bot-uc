@@ -28,6 +28,8 @@ export async function execute(interaction: CommandInteraction) {
     return;
   }
 
+  console.log("permissions:", interaction.memberPermissions);
+
   if (
     interaction.memberPermissions?.has(PermissionsBitField.Flags.Administrator)
   ) {
