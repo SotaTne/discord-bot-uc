@@ -5,15 +5,16 @@ import {
   SlashCommandBuilder,
 } from "discord.js";
 import { getAllTimeRoleNames } from "../utils.js";
+import { rmTimeRole } from "../rmTimeRole.js";
 
 export const data = new SlashCommandBuilder()
   .setName("uc-all-handdown")
   .setDescription(
     "(管理者のみのコマンドです) 挙手で付与されたすべての時刻(n時)ロールを解除します"
   );
-
 export async function execute(interaction: CommandInteraction) {
-  await interaction.deferReply(); // 遅延応答を開始
+  // Defer the reply once to allow time for processing
+  await interaction.deferReply();
 
   const guild = interaction.guild;
   if (!guild) {
@@ -21,52 +22,32 @@ export async function execute(interaction: CommandInteraction) {
     return;
   }
 
-  const validTimeRoles = getAllTimeRoleNames();
-  let caller = interaction.member as GuildMember;
+  const caller = interaction.member as GuildMember;
   if (!(caller instanceof GuildMember)) {
     await interaction.editReply("エラー: ユーザー情報を取得できませんでした。");
     return;
   }
 
-  // メンバー情報を再取得して最新の権限を確認
-  caller = await guild.members.fetch(caller.user.id);
-  if (!caller) {
-    await interaction.editReply("エラー: ユーザー情報を取得できませんでした。");
-    return;
-  }
-
-  if (!caller.permissions.has(PermissionsBitField.Flags.Administrator)) {
+  if (
+    interaction.memberPermissions?.has(PermissionsBitField.Flags.Administrator)
+  ) {
     await interaction.editReply(
       "管理者権限を持たないユーザーはこのコマンドを使えません"
     );
     return;
   }
 
-  // 削除対象のロールを配列として保持
-  const callerTimeRoles = caller.roles.cache
-    .filter((r) => validTimeRoles.includes(r.name))
-    .map((r) => r); // 配列に変換して保持
-
-  if (callerTimeRoles.length === 0) {
-    await interaction.editReply("対象のロールではないです。");
-    return;
-  }
-
   try {
-    // 事前に取得したリストをもとに削除処理を行う
-    for (const role of callerTimeRoles) {
-      try {
-        await caller.roles.remove(role);
-      } catch (error) {
-        console.error(
-          `Failed to remove ${role.name} from ${caller.user.tag}:`,
-          error
-        );
-      }
-    }
+    // 時間ロールを持つすべてのロール名
+    // すべての時間ロールを取得
+
+    const deletedRoles = await rmTimeRole({
+      guild,
+      rollNames: getAllTimeRoleNames(),
+    });
 
     await interaction.editReply(
-      `時間ロール (${callerTimeRoles
+      `時間ロール (${deletedRoles
         .map((r) => r.name)
         .join("/")}) を解除しました。`
     );
