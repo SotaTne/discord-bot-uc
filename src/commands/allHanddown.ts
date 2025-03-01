@@ -28,11 +28,9 @@ export async function execute(interaction: CommandInteraction) {
     return;
   }
 
-  console.log("permissions:", interaction.memberPermissions);
+  console.log("permissions:", caller.permissions);
 
-  if (
-    interaction.memberPermissions?.has(PermissionsBitField.Flags.Administrator)
-  ) {
+  if (!caller.permissions.has(PermissionsBitField.Flags.Administrator)) {
     await interaction.editReply(
       "管理者権限を持たないユーザーはこのコマンドを使えません"
     );
