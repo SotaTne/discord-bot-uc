@@ -124,6 +124,11 @@ export async function getOrCreateRole(
 }
 
 export function hasLeastRoleName(role: Role): boolean {
+  // role.membersが存在しない場合はfalseを返す
+  if (!role.members) {
+    return false;
+  }
+
   // あるロールのメンバーが優先順位を最低にするロールを持っているか
   return role.members.some((member: GuildMember) =>
     member.roles.cache.some((r) => r.name === leastRoleName)
