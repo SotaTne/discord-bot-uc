@@ -9,7 +9,7 @@ import {
   acceptRolls,
   getRoleByName,
   getTimeRoleName,
-  leastRoleName, // leastRoleNameが配列だと仮定
+  leastRoleName,
   returnRoleNameWithLeastTag,
   startOclocks,
 } from "./utils.js";
@@ -77,15 +77,22 @@ export async function matching({
     // acceptRollsに含まれるロール && 指定された時間ロールを持つすべてのチームロールを取得
     const teamRoles = Array.from(
       guild.roles.cache
-        .filter((role) => acceptRolls.includes(role?.name || ""))
+        .filter((role) => acceptRolls.includes(role.name))
         .values()
     );
 
-    const participatingTeams = teamRoles.filter((teamRole) =>
-      teamRole.members.some((member: GuildMember) =>
-        member.roles.cache.some((r) => r?.name || "" === timeRoleName)
-      )
-    );
+    // teamRole.membersの存在を確認
+    const participatingTeams = teamRoles.filter((teamRole) => {
+      // teamRole.membersが存在するか確認
+      if (!teamRole.members) {
+        return false;
+      }
+
+      // メンバーが役職を持っているか確認
+      return teamRole.members.some((member: GuildMember) =>
+        member.roles.cache.some((r) => r.name === timeRoleName)
+      );
+    });
 
     if (participatingTeams.length < 2) {
       const embed = new EmbedBuilder()
@@ -98,18 +105,20 @@ export async function matching({
 
     const leastRoleTeams: Role[] = [];
     const normalRoleTeams: Role[] = [];
+
+    // 各チームのメンバー情報を確認する
     teamRoles.forEach((teamRole) => {
-      if (
-        teamRole.members.every(
-          (member: GuildMember) =>
-            member.roles.cache.some((r) =>
-              leastRoleName.includes(r?.name || "")
-            ) // leastRoleNameが配列である前提
-        )
-      ) {
-        leastRoleTeams.push(teamRole);
-      } else {
-        normalRoleTeams.push(teamRole);
+      if (teamRole.members) {
+        if (
+          teamRole.members.every(
+            (member: GuildMember) =>
+              member.roles.cache.some((r) => leastRoleName.includes(r.name)) // leastRoleNameが配列である前提
+          )
+        ) {
+          leastRoleTeams.push(teamRole);
+        } else {
+          normalRoleTeams.push(teamRole);
+        }
       }
     });
 
