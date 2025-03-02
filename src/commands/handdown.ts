@@ -3,23 +3,60 @@ import {
   GuildMember,
   SlashCommandBuilder,
   EmbedBuilder,
+  CommandInteractionOptionResolver,
 } from "discord.js";
-import { checkHasAcceptRole, getAllTimeRoleNames } from "../utils.js";
+import {
+  checkHasAcceptRole,
+  getAllTimeRoleNames,
+  getTimeRoleName,
+  isAcceptTime,
+  startBeforeLimitMinutes,
+  startRecruitment,
+} from "../utils.js";
 
 export const data = new SlashCommandBuilder()
   .setName("uc-handdown")
   .setDescription(
     "挙手をキャンセルして、対象の時刻ロールを同じチームのメンバーから外します"
+  )
+  .addIntegerOption((option) =>
+    option.setName("time").setDescription("対戦時間").setRequired(true)
   );
 
 export async function execute(interaction: CommandInteraction) {
   await interaction.deferReply({ ephemeral: true }); // 遅延応答を開始、ephemeral を true に設定
+
+  const options =
+    interaction.options as unknown as CommandInteractionOptionResolver;
+  const time = options.getInteger("time", true);
 
   const guild = interaction.guild;
   if (!guild) {
     const embed = new EmbedBuilder()
       .setColor("Red")
       .setDescription("エラー: サーバー情報を取得できませんでした。");
+
+    await interaction.editReply({ embeds: [embed] });
+    return;
+  }
+
+  if (!isAcceptTime(time)) {
+    const embed = new EmbedBuilder()
+      .setColor("Yellow")
+      .setDescription(
+        `受付時間外です。受付可能時間は当日の${startRecruitment}時~試合開始${startBeforeLimitMinutes}分前 です。`
+      );
+
+    await interaction.editReply({ embeds: [embed] });
+    return;
+  }
+
+  const selectedTimeRoleName = getTimeRoleName(time);
+
+  if (!selectedTimeRoleName) {
+    const embed = new EmbedBuilder()
+      .setColor("Yellow")
+      .setDescription("不正な対戦時間を指定してます");
 
     await interaction.editReply({ embeds: [embed] });
     return;
@@ -37,8 +74,8 @@ export async function execute(interaction: CommandInteraction) {
   }
 
   const validTimeRoles = getAllTimeRoleNames();
-  const callerTimeRoles = caller.roles.cache.filter((r) =>
-    validTimeRoles.includes(r.name)
+  const callerTimeRoles = caller.roles.cache.filter(
+    (r) => validTimeRoles.includes(r.name) && r.name === selectedTimeRoleName
   );
   const roles = callerTimeRoles.values();
   let isRemoved = false;

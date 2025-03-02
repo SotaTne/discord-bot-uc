@@ -73,7 +73,11 @@ export async function execute(interaction: CommandInteraction) {
     return;
   }
 
-  if (caller.roles.cache.some((r) => validTimeRoles.includes(r.name))) {
+  if (
+    caller.roles.cache.some(
+      (r) => validTimeRoles.includes(r.name) && r.name === getTimeRoleName(time)
+    )
+  ) {
     const embed = new EmbedBuilder()
       .setColor("Yellow")
       .setDescription("すでに挙手しています。");
