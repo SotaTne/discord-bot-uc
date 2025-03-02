@@ -5,6 +5,7 @@ import {
   PermissionsBitField,
   Role,
   SlashCommandBuilder,
+  EmbedBuilder,
 } from "discord.js";
 import {
   acceptRolls,
@@ -23,35 +24,49 @@ export async function execute(interaction: CommandInteraction) {
     await interaction.deferReply();
   } catch {
     console.error("遅延応答に失敗しました");
+
+    const embed = new EmbedBuilder()
+      .setColor("Red")
+      .setDescription("エラー: 遅延応答に失敗しました。");
+
+    await interaction.editReply({ embeds: [embed] });
     return;
   }
-  try {
-    // Defer the reply once to allow time for processing
 
+  try {
     const guild = interaction.guild;
     if (!(guild instanceof Guild)) {
-      await interaction.editReply(
-        "エラー: サーバー情報を取得できませんでした。"
-      );
+      const embed = new EmbedBuilder()
+        .setColor("Red")
+        .setDescription("エラー: サーバー情報を取得できませんでした。");
+
+      await interaction.editReply({ embeds: [embed] });
       return;
     }
 
     const caller = interaction.member as GuildMember;
     if (!(caller instanceof GuildMember)) {
-      await interaction.editReply(
-        "エラー: ユーザー情報を取得できませんでした。"
-      );
+      const embed = new EmbedBuilder()
+        .setColor("Red")
+        .setDescription("エラー: ユーザー情報を取得できませんでした。");
+
+      await interaction.editReply({ embeds: [embed] });
       return;
     }
 
     console.log("permissions:", caller.permissions);
 
     if (!caller.permissions.has(PermissionsBitField.Flags.Administrator)) {
-      await interaction.editReply(
-        "管理者権限を持たないユーザーはこのコマンドを使えません"
-      );
+      const embed = new EmbedBuilder()
+        .setColor("Yellow")
+        .setDescription(
+          "管理者権限を持たないユーザーはこのコマンドを使えません"
+        );
+
+      await interaction.editReply({ embeds: [embed] });
       return;
     }
+
     const timeRoleNameTuples = getTimeRoleTuples();
     const allTimeRoleNames = getAllTimeRoleNames();
     const teamRoles = Array.from(
@@ -92,21 +107,23 @@ export async function execute(interaction: CommandInteraction) {
       }
     );
     const message = "# 現在の挙手リスト\n" + resultMessage.join("\n");
-    try {
-      await interaction.editReply(message);
-      return;
-    } catch (e) {
-      console.error("エラーが発生しました", e);
-      console.error("エラーが発生しました");
-    }
+
+    const embed = new EmbedBuilder().setColor("Green").setDescription(message);
+
+    await interaction.editReply({ embeds: [embed] });
+    return;
   } catch (e) {
     console.error("エラーが発生しました", e);
+
+    const embed = new EmbedBuilder()
+      .setColor("Red")
+      .setDescription("エラーが発生しました");
+
     try {
-      await interaction.editReply("エラーが発生しました");
+      await interaction.editReply({ embeds: [embed] });
       return;
     } catch (e) {
       console.error("エラーが発生しました", e);
-      console.error("エラーが発生しました");
     }
   }
 }

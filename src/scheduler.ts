@@ -51,7 +51,7 @@ export function setupSchedules(client: Client) {
 
     console.log(`${cronTime} JST でタスクをスケジュールしました`);
   });
-  const cronTime: string = `0 5 ${startRecruitment % 24} * * *`;
+  const cronTime: string = `0 25 ${startRecruitment % 24} * * *`;
   jobs.push(
     new CronJob(
       cronTime,
@@ -154,14 +154,15 @@ async function sendAndRmTimeRoleMessage(client: Client) {
         guild,
         rollNames: getAllTimeRoleNames(),
       });
-      const embed = new EmbedBuilder()
-        .setColor("Green")
-        .setDescription(
-          `以下の時間ロールの解除をしました\n${rmRoles
-            .map((r) => "- " + r.name)
-            .join("\n")}`
-        );
-      await channel.send({ embeds: [embed] });
+      let message = "# 昨日の時間ロールの解除をします";
+      if (rmRoles.length === 0) {
+        message += "## 昨日の時間ロールはありませんでした";
+      } else {
+        message += `## 昨日の時間ロールの解除をしました\n${rmRoles
+          .map((r) => `- ${r.name}`)
+          .join("\n")}`;
+      }
+      await channel.send(message);
     } catch (error) {
       console.error("ロールの解除中にエラーが発生:", error);
       try {
