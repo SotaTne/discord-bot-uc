@@ -49,21 +49,36 @@ export function setupSchedules(client: Client) {
       )
     );
 
-    console.log(`${hour}:00 JST でタスクをスケジュールしました`);
+    console.log(`${cronTime} JST でタスクをスケジュールしました`);
   });
+  const cronTime: string = `0 57 ${startRecruitment % 24} * * *`;
   jobs.push(
-    new CronJob(`0 0 ${startRecruitment % 24} * * *`, async function () {
-      try {
-        if (schedulerEnabled) {
-          await sendScheduledRecruitmentMessage(startRecruitment % 24, client);
-          await sendAndRmTimeRoleMessage(client);
+    new CronJob(
+      cronTime,
+      async function () {
+        try {
+          if (schedulerEnabled) {
+            try {
+              await sendScheduledRecruitmentMessage(
+                startRecruitment % 24,
+                client
+              );
+            } catch (e) {
+              console.error(e);
+            }
+
+            await sendAndRmTimeRoleMessage(client);
+          }
+        } catch (e) {
+          console.error(e);
         }
-      } catch (e) {
-        console.error(e);
-      }
-    })
+      },
+      null, // onComplete
+      true, // start
+      "Asia/Tokyo" // タイムゾーン指定
+    )
   );
-  console.log(`${startRecruitment % 24}:00 JST でタスクをスケジュールしました`);
+  console.log(`${cronTime} JST でタスクをスケジュールしました`);
 }
 
 // スケジュールされたメッセージを送信する関数
@@ -96,9 +111,14 @@ async function sendScheduledRecruitmentMessage(time: number, client: Client) {
       console.error("TARGET_CHANNEL_IDが設定されていません");
       return;
     }
+    if (!TARGET_GUILD_ID) {
+      console.error("TARGET_GUILD_IDが設定されていません");
+      return;
+    }
     await recruitment({
       client,
       channelId: TARGET_CHANNEL_ID,
+      guildId: TARGET_GUILD_ID,
       time,
     });
   } catch (error) {
@@ -106,7 +126,7 @@ async function sendScheduledRecruitmentMessage(time: number, client: Client) {
   }
 }
 
-async function sendAndRmTimeRoleMessage(client: Client) {
+async function sendAndRmTimeRoleMessage(client: Client, message?: string) {
   try {
     if (!TARGET_CHANNEL_ID) {
       console.error("TARGET_CHANNEL_IDが設定されていません");
@@ -137,7 +157,8 @@ async function sendAndRmTimeRoleMessage(client: Client) {
         rollNames: getAllTimeRoleNames(),
       });
       await channel.send(
-        `時間ロール (${rmRoles.map((r) => r.name).join("/")}) を解除しました`
+        message ??
+          `時間ロール (${rmRoles.map((r) => r.name).join("/")}) を解除しました`
       );
     } catch (error) {
       console.error("ロールの解除中にエラーが発生:", error);

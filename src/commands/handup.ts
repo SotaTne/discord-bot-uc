@@ -27,7 +27,7 @@ export async function execute(interaction: CommandInteraction) {
 
   const options =
     interaction.options as unknown as CommandInteractionOptionResolver;
-  const time = options.getInteger("time", true) as number;
+  const time = options.getInteger("time", true);
 
   if (!isAcceptTime(time)) {
     // callerにしか見えないメッセージを送信

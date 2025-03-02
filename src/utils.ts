@@ -2,8 +2,8 @@ import { Guild, Role, GuildMember } from "discord.js";
 import { createHash } from "crypto";
 
 // 挙手受付可能な時間帯（24時間制）
-export const startOclocks: number[] = [21, 22, 23];
-export const startRecruitment = 13;
+export const startOclocks: number[] = [14, 15, 21, 22, 23]; // デフォルトは[ 21, 22, 23]
+export const startRecruitment = 13; // デフォルトは12
 export const acceptRolls: string[] = [
   "KMU",
   "UT",
@@ -21,7 +21,7 @@ export const acceptRolls: string[] = [
   "tym",
 ];
 export const leastRoleName = "試合数5";
-export const startBeforeLimitMinutes = 7;
+export const startBeforeLimitMinutes = 45; //デフォルトは7
 
 export const PORT: number = process.env.PORT
   ? parseInt(process.env.PORT)
@@ -48,14 +48,18 @@ export function isAcceptTime(wantTime: number): boolean {
   console.log("minute:", minute);
 
   // wantTimeの7分前(n-1)時の53分まで受付
+  if (hour < startRecruitment) {
+    return false;
+  }
   if (
     (60 - startBeforeLimitMinutes) % 60 > minute &&
     (wantTime - 1) % 24 === hour
   ) {
     return true;
   }
+
   // n-2時間前かつ12時以降なら無条件で受付
-  if ((wantTime - 1) % 24 < hour && hour > startRecruitment) {
+  if ((wantTime - 1) % 24 > hour) {
     return true;
   }
   return false;

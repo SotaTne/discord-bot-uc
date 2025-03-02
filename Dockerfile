@@ -9,6 +9,7 @@ RUN npm run build
 
 FROM gcr.io/distroless/nodejs22-debian12
 ENV NODE_ENV production
+ENV TZ=UTC
 WORKDIR /app
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
