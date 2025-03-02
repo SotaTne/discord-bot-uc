@@ -131,10 +131,7 @@ export function hasLeastRoleName(role: Role): boolean {
 }
 
 export function returnRoleNameWithLeastTag(role: Role): string {
-  if (hasLeastRoleName(role)) {
-    return leastRoleName;
-  }
-  return role.name + hasLeastRoleName(role) ? ` (${leastRoleName})` : "";
+  return role.name + (hasLeastRoleName(role) ? ` (${leastRoleName})` : "");
 }
 
 export function checkHasAcceptRole(member: GuildMember): boolean {
