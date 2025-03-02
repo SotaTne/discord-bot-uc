@@ -98,11 +98,11 @@ export async function execute(interaction: CommandInteraction) {
       timeTeamRoleTuple.push([time, roleName, teamRoles]);
     });
 
-    const resultMessage = timeTeamRoleTuple.map(
-      ([time, roleName, teamRoles]) => {
+    const resultMessage = await timeTeamRoleTuple.map(
+      async ([time, roleName, teamRoles]) => {
         const header = `## ${time}時の挙手リスト\n(ロール:${roleName})`;
-        const main = teamRoles.map((teamRole) => {
-          return `- **チーム:${returnRoleNameWithLeastTag(teamRole)}**`;
+        const main = await teamRoles.map(async (teamRole) => {
+          return `- **チーム:${await returnRoleNameWithLeastTag(teamRole)}**`;
         });
         return [header, ...main].join("\n");
       }
