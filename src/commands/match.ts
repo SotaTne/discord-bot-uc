@@ -5,6 +5,7 @@ import {
   GuildMember,
   CommandInteractionOptionResolver,
   PermissionsBitField,
+  EmbedBuilder,
 } from "discord.js";
 import {
   acceptRolls,
@@ -25,7 +26,7 @@ export const data = new SlashCommandBuilder()
   );
 
 export async function execute(interaction: CommandInteraction) {
-  await interaction.deferReply(); // 遅延応答の開始
+  await interaction.deferReply(); // このコマンドは全員に見えるように ephemeral は指定しない
   const options =
     interaction.options as unknown as CommandInteractionOptionResolver;
   const time = options.getInteger("time", true) as number;
@@ -33,25 +34,41 @@ export async function execute(interaction: CommandInteraction) {
   const timeRoleName = getTimeRoleName(time);
 
   if (!startOclocks.has(time)) {
-    await interaction.editReply("試合の受付時間外です。");
+    const embed = new EmbedBuilder()
+      .setColor("Yellow")
+      .setDescription("試合の受付時間外です。");
+
+    await interaction.editReply({ embeds: [embed] });
     return;
   }
 
   if (!timeRoleName) {
-    await interaction.editReply("対戦時間が不正です。");
+    const embed = new EmbedBuilder()
+      .setColor("Red")
+      .setDescription("対戦時間が不正です。");
+
+    await interaction.editReply({ embeds: [embed] });
     return;
   }
 
   const guild = interaction.guild;
   if (!guild) {
-    await interaction.editReply("エラー: サーバー情報を取得できませんでした。");
+    const embed = new EmbedBuilder()
+      .setColor("Red")
+      .setDescription("エラー: サーバー情報を取得できませんでした。");
+
+    await interaction.editReply({ embeds: [embed] });
     return;
   }
 
   const timeRole = getRoleByName(timeRoleName, interaction.guild);
 
   if (!timeRole) {
-    await interaction.editReply("対象の時間ロールが見つかりませんでした。");
+    const embed = new EmbedBuilder()
+      .setColor("Yellow")
+      .setDescription("対象の時間ロールが見つかりませんでした。");
+
+    await interaction.editReply({ embeds: [embed] });
     return;
   }
 
@@ -60,9 +77,13 @@ export async function execute(interaction: CommandInteraction) {
     !caller.permissions.has(PermissionsBitField.Flags.Administrator) &&
     !checkHasAcceptRole(caller)
   ) {
-    await interaction.editReply(
-      "挙手が許可または、管理者権限のないユーザーはこのコマンドを使えません。"
-    );
+    const embed = new EmbedBuilder()
+      .setColor("Yellow")
+      .setDescription(
+        "挙手が許可または、管理者権限のないユーザーはこのコマンドを使えません。"
+      );
+
+    await interaction.editReply({ embeds: [embed] });
     return;
   }
 
@@ -81,7 +102,11 @@ export async function execute(interaction: CommandInteraction) {
     );
 
     if (participatingTeams.length < 2) {
-      await interaction.editReply("試合に参加するチームが十分ではありません。");
+      const embed = new EmbedBuilder()
+        .setColor("Yellow")
+        .setDescription("試合に参加するチームが十分ではありません。");
+
+      await interaction.editReply({ embeds: [embed] });
       return;
     }
 
@@ -129,11 +154,15 @@ export async function execute(interaction: CommandInteraction) {
     }
     matchMessage += `<@&${timeRole.id}>`;
 
+    // マッチング結果は通常のメッセージで表示（全員に見えるようにするため）
     await interaction.editReply(matchMessage);
   } catch (error) {
     console.error("試合マッチング処理中にエラーが発生:", error);
-    await interaction.editReply(
-      "試合マッチングの処理中にエラーが発生しました。"
-    );
+
+    const embed = new EmbedBuilder()
+      .setColor("Red")
+      .setDescription("試合マッチングの処理中にエラーが発生しました。");
+
+    await interaction.editReply({ embeds: [embed] });
   }
 }

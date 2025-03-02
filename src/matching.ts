@@ -1,4 +1,10 @@
-import { ChannelType, Client, GuildMember, Role } from "discord.js";
+import {
+  ChannelType,
+  Client,
+  GuildMember,
+  Role,
+  EmbedBuilder,
+} from "discord.js";
 import {
   acceptRolls,
   getRoleByName,
@@ -29,24 +35,40 @@ export async function matching({
   }
 
   if (!startOclocks.has(time)) {
-    await channel.send("## 試合の受付時間外にスケジュールされました");
+    const embed = new EmbedBuilder()
+      .setColor("Yellow")
+      .setDescription("## 試合の受付時間外にスケジュールされました");
+
+    await channel.send({ embeds: [embed] });
     return;
   }
 
   if (!timeRoleName) {
-    await channel.send("## 不正な対戦時間がスケジュールされました");
+    const embed = new EmbedBuilder()
+      .setColor("Red")
+      .setDescription("## 不正な対戦時間がスケジュールされました");
+
+    await channel.send({ embeds: [embed] });
     return;
   }
 
   if (!guild) {
-    await channel.send("## サーバー情報を取得できませんでした");
+    const embed = new EmbedBuilder()
+      .setColor("Red")
+      .setDescription("## サーバー情報を取得できませんでした");
+
+    await channel.send({ embeds: [embed] });
     return;
   }
 
   const timeRole = getRoleByName(timeRoleName, guild);
 
   if (!timeRole) {
-    await channel.send("## 対象時間ロールをつけているユーザーがいませんでした");
+    const embed = new EmbedBuilder()
+      .setColor("Yellow")
+      .setDescription("## 対象時間ロールをつけているユーザーがいませんでした");
+
+    await channel.send({ embeds: [embed] });
     return;
   }
 
@@ -65,7 +87,11 @@ export async function matching({
     );
 
     if (participatingTeams.length < 2) {
-      await channel.send("## 試合に参加するチームが十分ではありません");
+      const embed = new EmbedBuilder()
+        .setColor("Yellow")
+        .setDescription("## 試合に参加するチームが十分ではありません");
+
+      await channel.send({ embeds: [embed] });
       return;
     }
 
@@ -113,9 +139,15 @@ export async function matching({
     }
     matchMessage += `<@&${timeRole.id}>`;
 
+    // マッチング結果は通常のテキストメッセージで送信（メンションが機能するように）
     await channel.send(matchMessage);
   } catch (error) {
     console.error("試合マッチング処理中にエラーが発生:", error);
-    await channel.send("## 試合マッチング処理中にエラーが発生しました");
+
+    const embed = new EmbedBuilder()
+      .setColor("Red")
+      .setDescription("## 試合マッチング処理中にエラーが発生しました");
+
+    await channel.send({ embeds: [embed] });
   }
 }

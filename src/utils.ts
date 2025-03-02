@@ -2,8 +2,8 @@ import { Guild, Role, GuildMember } from "discord.js";
 import { createHash } from "crypto";
 
 // 挙手受付可能な時間帯（24時間制）
-export const startOclocks = new Set([14, 15, 21, 22, 23]); // デフォルトは[ 21, 22, 23]
-export const startRecruitment = 13; // デフォルトは12
+export const startOclocks = new Set([/*14, 15,*/ 17, 21, 22, 23]); // デフォルトは[ 21, 22, 23]
+export const startRecruitment = 16; // デフォルトは12
 export const acceptRolls: string[] = [
   "KMU",
   "UT",
@@ -21,7 +21,7 @@ export const acceptRolls: string[] = [
   "tym",
 ];
 export const leastRoleName = "試合数5";
-export const startBeforeLimitMinutes = 45; //デフォルトは7
+export const startBeforeLimitMinutes = 53; //デフォルトは7
 
 export const PORT: number = process.env.PORT
   ? parseInt(process.env.PORT)
@@ -123,11 +123,6 @@ export async function getOrCreateRole(
   return role;
 }
 
-// export function getTeamRoles(member: GuildMember): Role[] {
-//   return member.roles.cache
-//     .filter((role) => role.name.startsWith("チーム:"))
-//     .map((role) => role);
-// }
 export function checkHasAcceptRole(member: GuildMember): boolean {
   return member.roles.cache.some((r) => acceptRolls.includes(r.name));
 }

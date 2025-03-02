@@ -1,5 +1,6 @@
 import {
   CommandInteraction,
+  Guild,
   GuildMember,
   PermissionsBitField,
   Role,
@@ -28,7 +29,7 @@ export async function execute(interaction: CommandInteraction) {
     // Defer the reply once to allow time for processing
 
     const guild = interaction.guild;
-    if (!guild) {
+    if (!(guild instanceof Guild)) {
       await interaction.editReply(
         "エラー: サーバー情報を取得できませんでした。"
       );
@@ -93,6 +94,7 @@ export async function execute(interaction: CommandInteraction) {
     const message = "# 現在の挙手リスト\n" + resultMessage.join("\n");
     try {
       await interaction.editReply(message);
+      return;
     } catch (e) {
       console.error("エラーが発生しました", e);
       console.error("エラーが発生しました");
@@ -101,6 +103,7 @@ export async function execute(interaction: CommandInteraction) {
     console.error("エラーが発生しました", e);
     try {
       await interaction.editReply("エラーが発生しました");
+      return;
     } catch (e) {
       console.error("エラーが発生しました", e);
       console.error("エラーが発生しました");

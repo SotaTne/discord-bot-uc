@@ -2,6 +2,7 @@ import {
   CommandInteraction,
   GuildMember,
   SlashCommandBuilder,
+  EmbedBuilder,
 } from "discord.js";
 import { checkHasAcceptRole, getAllTimeRoleNames } from "../utils.js";
 
@@ -12,20 +13,26 @@ export const data = new SlashCommandBuilder()
   );
 
 export async function execute(interaction: CommandInteraction) {
-  await interaction.deferReply(); // 遅延応答を開始
+  await interaction.deferReply({ ephemeral: true }); // 遅延応答を開始、ephemeral を true に設定
 
   const guild = interaction.guild;
   if (!guild) {
-    // callerにしか見えないメッセージを送信
-    await interaction.editReply("エラー: サーバー情報を取得できませんでした。");
+    const embed = new EmbedBuilder()
+      .setColor("Red")
+      .setDescription("エラー: サーバー情報を取得できませんでした。");
+
+    await interaction.editReply({ embeds: [embed] });
     return;
   }
 
   const caller = interaction.member as GuildMember;
 
   if (!checkHasAcceptRole(caller)) {
-    // callerにしか見えないメッセージを送信
-    await interaction.editReply("キャンセルが許可されていません");
+    const embed = new EmbedBuilder()
+      .setColor("Yellow")
+      .setDescription("キャンセルが許可されていません");
+
+    await interaction.editReply({ embeds: [embed] });
     return;
   }
 
@@ -35,6 +42,7 @@ export async function execute(interaction: CommandInteraction) {
   );
   const roles = callerTimeRoles.values();
   let isRemoved = false;
+
   for (const role of roles) {
     try {
       await caller.roles.remove(role);
@@ -44,16 +52,27 @@ export async function execute(interaction: CommandInteraction) {
         `Failed to remove ${role.name} from ${caller.user.tag}:`,
         error
       );
-      // callerにしか見えないメッセージを送信
-      await interaction.editReply("ロールの解除中にエラーが発生しました。");
+
+      const embed = new EmbedBuilder()
+        .setColor("Red")
+        .setDescription("ロールの解除中にエラーが発生しました。");
+
+      await interaction.editReply({ embeds: [embed] });
+      return; // エラーが発生した場合は処理を中断
     }
   }
 
   if (isRemoved) {
-    // callerにしか見えないメッセージを送信
-    await interaction.editReply("時間ロールを解除しました。");
+    const embed = new EmbedBuilder()
+      .setColor("Green")
+      .setDescription("時間ロールを解除しました。");
+
+    await interaction.editReply({ embeds: [embed] });
   } else {
-    // callerにしか見えないメッセージを送信
-    await interaction.editReply("時間ロールは付与されてませんでした。");
+    const embed = new EmbedBuilder()
+      .setColor("Grey")
+      .setDescription("時間ロールは付与されてませんでした。");
+
+    await interaction.editReply({ embeds: [embed] });
   }
 }

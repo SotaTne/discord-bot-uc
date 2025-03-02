@@ -6,7 +6,7 @@ import {
   startRecruitment,
 } from "./utils.js";
 import { CronJob } from "cron";
-import { ChannelType, Client } from "discord.js";
+import { ChannelType, Client, EmbedBuilder } from "discord.js";
 import { matching } from "./matching.js";
 import { recruitment } from "./recruitment.js";
 import { rmTimeRole } from "./rmTimeRole.js";
@@ -51,13 +51,18 @@ export function setupSchedules(client: Client) {
 
     console.log(`${cronTime} JST でタスクをスケジュールしました`);
   });
-  const cronTime: string = `0 57 ${startRecruitment % 24} * * *`;
+  const cronTime: string = `0 5 ${startRecruitment % 24} * * *`;
   jobs.push(
     new CronJob(
       cronTime,
       async function () {
         try {
           if (schedulerEnabled) {
+            try {
+              await sendAndRmTimeRoleMessage(client);
+            } catch (e) {
+              console.error(e);
+            }
             try {
               await sendScheduledRecruitmentMessage(
                 startRecruitment % 24,
@@ -66,8 +71,6 @@ export function setupSchedules(client: Client) {
             } catch (e) {
               console.error(e);
             }
-
-            await sendAndRmTimeRoleMessage(client);
           }
         } catch (e) {
           console.error(e);
@@ -126,7 +129,7 @@ async function sendScheduledRecruitmentMessage(time: number, client: Client) {
   }
 }
 
-async function sendAndRmTimeRoleMessage(client: Client, message?: string) {
+async function sendAndRmTimeRoleMessage(client: Client) {
   try {
     if (!TARGET_CHANNEL_ID) {
       console.error("TARGET_CHANNEL_IDが設定されていません");
@@ -137,18 +140,13 @@ async function sendAndRmTimeRoleMessage(client: Client, message?: string) {
       return;
     }
     const guild = await client.guilds.fetch(TARGET_GUILD_ID);
-    const channel = await client.channels.fetch(TARGET_CHANNEL_ID);
-    if (!channel || channel.type !== ChannelType.GuildText) {
-      console.error("チャンネルが見つかりません");
-      return;
-    }
     if (!guild) {
       console.error("ギルドが見つかりません");
-      try {
-        await channel.send("## サーバー情報を取得できませんでした");
-      } catch {
-        console.error("メッセージ送信中にエラーが発生しました");
-      }
+      return;
+    }
+    const channel = await guild.channels.fetch(TARGET_CHANNEL_ID);
+    if (!channel || channel.type !== ChannelType.GuildText) {
+      console.error("チャンネルが見つかりません");
       return;
     }
     try {
@@ -156,14 +154,23 @@ async function sendAndRmTimeRoleMessage(client: Client, message?: string) {
         guild,
         rollNames: getAllTimeRoleNames(),
       });
-      await channel.send(
-        message ??
-          `時間ロール (${rmRoles.map((r) => r.name).join("/")}) を解除しました`
-      );
+      const embed = new EmbedBuilder()
+        .setColor("Green")
+        .setDescription(
+          `以下の時間ロールの解除をしました\n${rmRoles
+            .map((r) => "- " + r.name)
+            .join("\n")}`
+        );
+      await channel.send({ embeds: [embed] });
     } catch (error) {
       console.error("ロールの解除中にエラーが発生:", error);
       try {
-        await channel.send("ロールの解除中にエラーが発生しました");
+        const embed = new EmbedBuilder()
+          .setColor("Red")
+          .setDescription("ロールの解除中にエラーが発生しました");
+        await channel.send({
+          embeds: [embed],
+        });
       } catch {
         console.error("メッセージ送信中にエラーが発生しました");
       }

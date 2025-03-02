@@ -3,6 +3,7 @@ import {
   GuildMember,
   PermissionsBitField,
   SlashCommandBuilder,
+  EmbedBuilder,
 } from "discord.js";
 import { getAllTimeRoleNames } from "../utils.js";
 import { rmTimeRole } from "../rmTimeRole.js";
@@ -12,61 +13,82 @@ export const data = new SlashCommandBuilder()
   .setDescription(
     "(管理者のみのコマンドです) 挙手で付与されたすべての時刻(n時)ロールを解除します"
   );
+
 export async function execute(interaction: CommandInteraction) {
   try {
-    await interaction.deferReply();
+    await interaction.deferReply({ ephemeral: true });
   } catch {
     console.error("遅延応答に失敗しました");
     return;
   }
-  try {
-    // Defer the reply once to allow time for processing
 
+  try {
     const guild = interaction.guild;
     if (!guild) {
-      await interaction.editReply(
-        "エラー: サーバー情報を取得できませんでした。"
-      );
+      const embed = new EmbedBuilder()
+        .setColor("Red")
+        .setDescription("エラー: サーバー情報を取得できませんでした。");
+
+      await interaction.editReply({ embeds: [embed] });
       return;
     }
 
     const caller = interaction.member as GuildMember;
     if (!(caller instanceof GuildMember)) {
-      await interaction.editReply(
-        "エラー: ユーザー情報を取得できませんでした。"
-      );
+      const embed = new EmbedBuilder()
+        .setColor("Red")
+        .setDescription("エラー: ユーザー情報を取得できませんでした。");
+
+      await interaction.editReply({ embeds: [embed] });
       return;
     }
 
     console.log("permissions:", caller.permissions);
 
     if (!caller.permissions.has(PermissionsBitField.Flags.Administrator)) {
-      await interaction.editReply(
-        "管理者権限を持たないユーザーはこのコマンドを使えません"
-      );
+      const embed = new EmbedBuilder()
+        .setColor("Yellow")
+        .setDescription(
+          "管理者権限を持たないユーザーはこのコマンドを使えません"
+        );
+
+      await interaction.editReply({ embeds: [embed] });
       return;
     }
 
     try {
       // 時間ロールを持つすべてのロール名
       // すべての時間ロールを取得
-
       const deletedRoles = await rmTimeRole({
         guild,
         rollNames: getAllTimeRoleNames(),
       });
 
-      await interaction.editReply(
-        `時間ロール (${deletedRoles
-          .map((r) => r.name)
-          .join("/")}) を解除しました。`
-      );
+      const embed = new EmbedBuilder()
+        .setColor("Green")
+        .setDescription(
+          `以下の時間ロールの解除をしました\n${deletedRoles
+            .map((r) => "- " + r.name)
+            .join("\n")}`
+        );
+
+      await interaction.editReply({ embeds: [embed] });
     } catch (error) {
       console.error("ロールの解除中にエラーが発生:", error);
-      await interaction.editReply("ロールの解除中にエラーが発生しました。");
+
+      const embed = new EmbedBuilder()
+        .setColor("Red")
+        .setDescription("ロールの解除中にエラーが発生しました。");
+
+      await interaction.editReply({ embeds: [embed] });
     }
   } catch (error) {
     console.error("エラーが発生:", error);
-    await interaction.editReply("エラーが発生しました。");
+
+    const embed = new EmbedBuilder()
+      .setColor("Red")
+      .setDescription("エラーが発生しました。");
+
+    await interaction.editReply({ embeds: [embed] });
   }
 }
