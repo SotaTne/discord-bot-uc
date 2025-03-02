@@ -51,7 +51,7 @@ export function setupSchedules(client: Client) {
 
     console.log(`${cronTime} JST でタスクをスケジュールしました`);
   });
-  const cronTime: string = `0 25 ${startRecruitment % 24} * * *`;
+  const cronTime: string = `0 38 ${startRecruitment % 24} * * *`;
   jobs.push(
     new CronJob(
       cronTime,
