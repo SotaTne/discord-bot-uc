@@ -9,7 +9,7 @@ import {
   acceptRolls,
   getRoleByName,
   getTimeRoleName,
-  leastRoleName,
+  leastRoleName, // leastRoleNameが配列だと仮定
   returnRoleNameWithLeastTag,
   startOclocks,
 } from "./utils.js";
@@ -100,8 +100,9 @@ export async function matching({
     const normalRoleTeams: Role[] = [];
     teamRoles.forEach((teamRole) => {
       if (
-        teamRole.members.every((member: GuildMember) =>
-          member.roles.cache.some((r) => leastRoleName.includes(r.name))
+        teamRole.members.every(
+          (member: GuildMember) =>
+            member.roles.cache.some((r) => leastRoleName.includes(r.name)) // leastRoleNameが配列である前提
         )
       ) {
         leastRoleTeams.push(teamRole);
