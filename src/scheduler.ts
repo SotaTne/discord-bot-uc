@@ -154,7 +154,7 @@ async function sendAndRmTimeRoleMessage(client: Client) {
         guild,
         rollNames: getAllTimeRoleNames(),
       });
-      let message = "# 昨日の時間ロールの解除をします";
+      let message = "# 昨日の時間ロールの解除をします\n";
       if (rmRoles.length === 0) {
         message += "## 昨日の時間ロールはありませんでした";
       } else {
