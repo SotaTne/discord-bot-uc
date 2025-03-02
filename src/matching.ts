@@ -37,7 +37,7 @@ export async function matching({
   if (!startOclocks.has(time)) {
     const embed = new EmbedBuilder()
       .setColor("Yellow")
-      .setDescription("## 試合の受付時間外にスケジュールされました");
+      .setDescription("試合の受付時間外にスケジュールされました");
 
     await channel.send({ embeds: [embed] });
     return;
@@ -46,7 +46,7 @@ export async function matching({
   if (!timeRoleName) {
     const embed = new EmbedBuilder()
       .setColor("Red")
-      .setDescription("## 不正な対戦時間がスケジュールされました");
+      .setDescription("不正な対戦時間がスケジュールされました");
 
     await channel.send({ embeds: [embed] });
     return;
@@ -55,7 +55,7 @@ export async function matching({
   if (!guild) {
     const embed = new EmbedBuilder()
       .setColor("Red")
-      .setDescription("## サーバー情報を取得できませんでした");
+      .setDescription("サーバー情報を取得できませんでした");
 
     await channel.send({ embeds: [embed] });
     return;
@@ -66,7 +66,7 @@ export async function matching({
   if (!timeRole) {
     const embed = new EmbedBuilder()
       .setColor("Yellow")
-      .setDescription("## 対象時間ロールをつけているユーザーがいませんでした");
+      .setDescription("対象時間ロールをつけているユーザーがいませんでした");
 
     await channel.send({ embeds: [embed] });
     return;
@@ -89,7 +89,7 @@ export async function matching({
     if (participatingTeams.length < 2) {
       const embed = new EmbedBuilder()
         .setColor("Yellow")
-        .setDescription("## 試合に参加するチームが十分ではありません");
+        .setDescription("試合に参加するチームが十分ではありません");
 
       await channel.send({ embeds: [embed] });
       return;
@@ -146,7 +146,7 @@ export async function matching({
 
     const embed = new EmbedBuilder()
       .setColor("Red")
-      .setDescription("## 試合マッチング処理中にエラーが発生しました");
+      .setDescription("試合マッチング処理中にエラーが発生しました");
 
     await channel.send({ embeds: [embed] });
   }

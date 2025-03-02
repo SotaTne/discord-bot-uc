@@ -21,7 +21,7 @@ export const data = new SlashCommandBuilder()
 
 export async function execute(interaction: CommandInteraction) {
   try {
-    await interaction.deferReply();
+    await interaction.deferReply({ ephemeral: true }); // ephemeral を true に設定して確実に本人のみに表示
   } catch {
     console.error("遅延応答に失敗しました");
 
