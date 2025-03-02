@@ -2,7 +2,7 @@ import { Guild, Role, GuildMember } from "discord.js";
 import { createHash } from "crypto";
 
 // 挙手受付可能な時間帯（24時間制）
-export const startOclocks: number[] = [14, 15, 21, 22, 23]; // デフォルトは[ 21, 22, 23]
+export const startOclocks = new Set([14, 15, 21, 22, 23]); // デフォルトは[ 21, 22, 23]
 export const startRecruitment = 13; // デフォルトは12
 export const acceptRolls: string[] = [
   "KMU",
@@ -36,7 +36,7 @@ export const getJPDate = () => {
 
 export function isAcceptTime(wantTime: number): boolean {
   // 日本時間の現在時刻を取得
-  if (!startOclocks.includes(wantTime)) {
+  if (!startOclocks.has(wantTime)) {
     return false;
   }
   const now = getJPDate();
@@ -75,8 +75,16 @@ export const parseTimeRoleName = (time: number): string => {
   return `time:${toSHA256(time.toString())}`;
 };
 
+export const getTimeRoleTuples: () => [number, string][] = () => {
+  const tuples: [number, string][] = [];
+  startOclocks.forEach((time) => {
+    tuples.push([time, parseTimeRoleName(time)]);
+  });
+  return tuples;
+};
+
 export function getTimeRoleName(time: number): string | null {
-  if (!startOclocks.includes(time)) {
+  if (!startOclocks.has(time)) {
     return null;
   }
   return parseTimeRoleName(time);
@@ -90,7 +98,9 @@ export function getRoleByName(
 }
 
 export function getAllTimeRoleNames(): string[] {
-  return startOclocks.map((hour) => parseTimeRoleName(hour));
+  const timeRoleNames: string[] = [];
+  startOclocks.forEach((hour) => timeRoleNames.push(parseTimeRoleName(hour)));
+  return timeRoleNames;
 }
 
 export async function getOrCreateRole(

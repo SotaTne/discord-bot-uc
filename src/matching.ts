@@ -28,7 +28,7 @@ export async function matching({
     return;
   }
 
-  if (!startOclocks.includes(time)) {
+  if (!startOclocks.has(time)) {
     await channel.send("## 試合の受付時間外にスケジュールされました");
     return;
   }

@@ -32,7 +32,7 @@ export async function execute(interaction: CommandInteraction) {
 
   const timeRoleName = getTimeRoleName(time);
 
-  if (!startOclocks.includes(time)) {
+  if (!startOclocks.has(time)) {
     await interaction.editReply("試合の受付時間外です。");
     return;
   }
