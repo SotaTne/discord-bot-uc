@@ -156,13 +156,13 @@ export async function matching({
 
     let matchMessage = `## 試合 (時間:${time}時) の組み合わせ:\n`;
     for (let i = 0; i < shuffledTeams.length; i += 2) {
-      matchMessage += `- **${returnRoleNameWithLeastTag(
+      matchMessage += `- **${await returnRoleNameWithLeastTag(
         shuffledTeams[i]
-      )}** vs **${returnRoleNameWithLeastTag(shuffledTeams[i + 1])}**\n`;
+      )}** vs **${await returnRoleNameWithLeastTag(shuffledTeams[i + 1])}**\n`;
     }
 
     if (excludedTeam) {
-      matchMessage += `**${returnRoleNameWithLeastTag(
+      matchMessage += `**${await returnRoleNameWithLeastTag(
         excludedTeam
       )}** はチーム数が奇数のため、マッチングしませんでした\n`;
     }

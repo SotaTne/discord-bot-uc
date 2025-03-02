@@ -123,22 +123,32 @@ export async function getOrCreateRole(
   return role;
 }
 
-export function hasLeastRoleName(role: Role): boolean {
-  // role.membersが存在しない場合はfalseを返す
+export async function hasLeastRoleName(role: Role): Promise<boolean> {
+  // role.membersが存在しない場合はfetchしてメンバー情報を取得する
   if (!role.members) {
-    return false;
+    try {
+      // メンバー情報を明示的に取得する
+      await role.guild.members.fetch();
+    } catch (error) {
+      console.error(
+        `ロール "${role.name}" のメンバー情報を取得できませんでした:`,
+        error
+      );
+      return false;
+    }
   }
 
-  // あるロールのメンバーが優先順位を最低にするロールを持っているか
+  // メンバー情報が取得できたら、最小ロールを持っているか確認
   return role.members.some((member: GuildMember) =>
     member.roles.cache.some((r) => r.name === leastRoleName)
   );
 }
 
-export function returnRoleNameWithLeastTag(role: Role): string {
+export async function returnRoleNameWithLeastTag(role: Role): Promise<string> {
   return (
     role?.name ||
-    "名前がありません" + (hasLeastRoleName(role) ? ` (${leastRoleName})` : "")
+    "名前がありません" +
+      ((await hasLeastRoleName(role)) ? ` (${leastRoleName})` : "")
   );
 }
 
