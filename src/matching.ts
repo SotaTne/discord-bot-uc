@@ -75,26 +75,36 @@ export async function matching({
 
   try {
     // acceptRollsに含まれるロール && 指定された時間ロールを持つすべてのチームロールを取得
-    const teamRoles = Array.from(
-      guild.roles.cache
-        .filter((role) => acceptRolls.includes(role.name))
-        .values()
-    );
+    const teamRoles: Set<Role> = new Set();
+    for (const acceptRoll of acceptRolls) {
+      const role = guild.roles.cache.find((role) => role.name === acceptRoll);
+
+      // ロールが見つからない場合の処理
+      if (!role) {
+        console.warn(`ロール ${acceptRoll} がサーバーに存在しません`);
+        continue; // ロールが見つからなければ、次のロールに進む
+      }
+      teamRoles.add(role);
+    }
 
     // teamRole.membersの存在を確認
-    const participatingTeams = teamRoles.filter((teamRole) => {
+    const participatingTeams: Set<Role> = new Set();
+    teamRoles.forEach((teamRole) => {
       // teamRole.membersが存在するか確認
       if (!teamRole.members) {
         return false;
       }
 
       // メンバーが役職を持っているか確認
-      return teamRole.members.some((member: GuildMember) =>
+      const hasRole = teamRole.members.some((member: GuildMember) =>
         member.roles.cache.some((r) => r.name === timeRoleName)
       );
+      if (hasRole) {
+        participatingTeams.add(teamRole);
+      }
     });
 
-    if (participatingTeams.length < 2) {
+    if (participatingTeams.size < 2) {
       const embed = new EmbedBuilder()
         .setColor("Yellow")
         .setDescription("試合に参加するチームが十分ではありません");
@@ -103,8 +113,8 @@ export async function matching({
       return;
     }
 
-    const leastRoleTeams: Role[] = [];
-    const normalRoleTeams: Role[] = [];
+    const leastRoleTeams: Set<Role> = new Set();
+    const normalRoleTeams: Set<Role> = new Set();
 
     // 各チームのメンバー情報を確認する
     teamRoles.forEach((teamRole) => {
@@ -115,26 +125,30 @@ export async function matching({
               member.roles.cache.some((r) => leastRoleName.includes(r.name)) // leastRoleNameが配列である前提
           )
         ) {
-          leastRoleTeams.push(teamRole);
+          leastRoleTeams.add(teamRole);
         } else {
-          normalRoleTeams.push(teamRole);
+          normalRoleTeams.add(teamRole);
         }
       }
     });
 
     let excludedTeam: Role | null = null;
 
-    let finalTeams: Role[] = participatingTeams;
+    let finalTeams: Role[];
 
-    if (participatingTeams.length % 2 !== 0) {
-      if (leastRoleTeams.length > 0) {
-        leastRoleTeams.sort((a, b) => a.createdTimestamp - b.createdTimestamp);
-        excludedTeam = leastRoleTeams.pop() || null;
+    if (participatingTeams.size % 2 !== 0) {
+      if (leastRoleTeams.size > 0) {
+        finalTeams = Array.from(leastRoleTeams);
+        finalTeams.sort((a, b) => a.createdTimestamp - b.createdTimestamp);
+        excludedTeam = finalTeams.pop() || null;
       } else {
-        normalRoleTeams.sort((a, b) => a.createdTimestamp - b.createdTimestamp);
-        excludedTeam = normalRoleTeams.pop() || null;
+        finalTeams = Array.from(normalRoleTeams);
+        finalTeams.sort((a, b) => a.createdTimestamp - b.createdTimestamp);
+        excludedTeam = finalTeams.pop() || null;
       }
-      finalTeams = leastRoleTeams.concat(normalRoleTeams);
+      finalTeams = finalTeams.concat(Array.from(normalRoleTeams));
+    } else {
+      finalTeams = Array.from(participatingTeams);
     }
 
     // チームをランダムにシャッフル

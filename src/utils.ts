@@ -21,7 +21,7 @@ export const acceptRolls: string[] = [
   "tym",
 ];
 export const leastRoleName = "試合数5";
-export const startBeforeLimitMinutes = 45; //デフォルトは7
+export const startBeforeLimitMinutes = 25; //デフォルトは7
 
 export const PORT: number = process.env.PORT
   ? parseInt(process.env.PORT)
