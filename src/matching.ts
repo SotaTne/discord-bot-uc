@@ -102,7 +102,9 @@ export async function matching({
       if (
         teamRole.members.every(
           (member: GuildMember) =>
-            member.roles.cache.some((r) => leastRoleName.includes(r.name)) // leastRoleNameが配列である前提
+            member.roles.cache.some((r) =>
+              leastRoleName.includes(r?.name || "")
+            ) // leastRoleNameが配列である前提
         )
       ) {
         leastRoleTeams.push(teamRole);

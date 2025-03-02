@@ -21,7 +21,7 @@ export const acceptRolls: string[] = [
   "tym",
 ];
 export const leastRoleName = "試合数5";
-export const startBeforeLimitMinutes = 55; //デフォルトは7
+export const startBeforeLimitMinutes = 45; //デフォルトは7
 
 export const PORT: number = process.env.PORT
   ? parseInt(process.env.PORT)
@@ -131,7 +131,10 @@ export function hasLeastRoleName(role: Role): boolean {
 }
 
 export function returnRoleNameWithLeastTag(role: Role): string {
-  return role.name + (hasLeastRoleName(role) ? ` (${leastRoleName})` : "");
+  return (
+    role?.name ||
+    "名前がありません" + (hasLeastRoleName(role) ? ` (${leastRoleName})` : "")
+  );
 }
 
 export function checkHasAcceptRole(member: GuildMember): boolean {
