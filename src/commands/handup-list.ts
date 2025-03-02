@@ -19,7 +19,6 @@ export const data = new SlashCommandBuilder()
   .setDescription(
     "(管理者のみのコマンドです) 挙手しているメンバーを全て時間ごとに表示します"
   );
-
 export async function execute(interaction: CommandInteraction) {
   try {
     await interaction.deferReply({ ephemeral: true }); // ephemeral を true に設定して確実に本人のみに表示
@@ -98,16 +97,20 @@ export async function execute(interaction: CommandInteraction) {
       timeTeamRoleTuple.push([time, roleName, teamRoles]);
     });
 
-    const resultMessage = await timeTeamRoleTuple.map(
-      async ([time, roleName, teamRoles]) => {
+    // ここで非同期の処理を待機するために Promise.all を使用
+    const resultMessages = await Promise.all(
+      timeTeamRoleTuple.map(async ([time, roleName, teamRoles]) => {
         const header = `## ${time}時の挙手リスト\n(ロール:${roleName})`;
-        const main = await teamRoles.map(async (teamRole) => {
-          return `- **チーム:${await returnRoleNameWithLeastTag(teamRole)}**`;
-        });
+        const main = await Promise.all(
+          teamRoles.map(async (teamRole) => {
+            return `- **チーム:${await returnRoleNameWithLeastTag(teamRole)}**`;
+          })
+        );
         return [header, ...main].join("\n");
-      }
+      })
     );
-    const message = "# 現在の挙手リスト\n" + resultMessage.join("\n");
+
+    const message = "# 現在の挙手リスト\n" + resultMessages.join("\n");
 
     const embed = new EmbedBuilder().setColor("Green").setDescription(message);
 
