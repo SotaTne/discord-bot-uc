@@ -2,7 +2,7 @@ import { Guild, Role, GuildMember } from "discord.js";
 import { createHash } from "crypto";
 
 // 挙手受付可能な時間帯（24時間制）
-export const startOclocks = new Set([/*14, 15,*/ 17, 18, 22, 23]); // デフォルトは[ 21, 22, 23]
+export const startOclocks = new Set([/*14, 15,*/ 19, 21, 22, 23]); // デフォルトは[ 21, 22, 23]
 export const startRecruitment = 12; // デフォルトは12
 export const acceptRolls: string[] = [
   "KMU",
