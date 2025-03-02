@@ -123,6 +123,20 @@ export async function getOrCreateRole(
   return role;
 }
 
+export function hasLeastRoleName(role: Role): boolean {
+  // あるロールのメンバーが優先順位を最低にするロールを持っているか
+  return role.members.some((member: GuildMember) =>
+    member.roles.cache.some((r) => r.name === leastRoleName)
+  );
+}
+
+export function returnRoleNameWithLeastTag(role: Role): string {
+  if (hasLeastRoleName(role)) {
+    return leastRoleName;
+  }
+  return role.name + hasLeastRoleName(role) ? ` (${leastRoleName})` : "";
+}
+
 export function checkHasAcceptRole(member: GuildMember): boolean {
   return member.roles.cache.some((r) => acceptRolls.includes(r.name));
 }

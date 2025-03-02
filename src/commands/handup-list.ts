@@ -11,6 +11,7 @@ import {
   acceptRolls,
   getAllTimeRoleNames,
   getTimeRoleTuples,
+  returnRoleNameWithLeastTag,
 } from "../utils.js";
 
 export const data = new SlashCommandBuilder()
@@ -101,7 +102,7 @@ export async function execute(interaction: CommandInteraction) {
       ([time, roleName, teamRoles]) => {
         const header = `## ${time}時の挙手リスト\n(ロール:${roleName})`;
         const main = teamRoles.map((teamRole) => {
-          return `- **チーム:${teamRole.name}**`;
+          return `- **チーム:${returnRoleNameWithLeastTag(teamRole)}**`;
         });
         return [header, ...main].join("\n");
       }

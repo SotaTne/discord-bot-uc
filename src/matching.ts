@@ -10,6 +10,7 @@ import {
   getRoleByName,
   getTimeRoleName,
   leastRoleName,
+  returnRoleNameWithLeastTag,
   startOclocks,
 } from "./utils.js";
 
@@ -129,13 +130,15 @@ export async function matching({
 
     let matchMessage = `## 試合 (時間:${time}時) の組み合わせ:\n`;
     for (let i = 0; i < shuffledTeams.length; i += 2) {
-      matchMessage += `- **${shuffledTeams[i].name}** vs **${
-        shuffledTeams[i + 1].name
-      }**\n`;
+      matchMessage += `- **${returnRoleNameWithLeastTag(
+        shuffledTeams[i]
+      )}** vs **${returnRoleNameWithLeastTag(shuffledTeams[i + 1])}**\n`;
     }
 
     if (excludedTeam) {
-      matchMessage += `**${excludedTeam.name}** はチーム数が奇数のため、マッチングしませんでした\n`;
+      matchMessage += `**${returnRoleNameWithLeastTag(
+        excludedTeam
+      )}** はチーム数が奇数のため、マッチングしませんでした\n`;
     }
     matchMessage += `<@&${timeRole.id}>`;
 
