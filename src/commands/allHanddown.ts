@@ -43,8 +43,6 @@ export async function execute(interaction: CommandInteraction) {
       return;
     }
 
-    console.log("permissions:", caller.permissions);
-
     if (!caller.permissions.has(PermissionsBitField.Flags.Administrator)) {
       const embed = new EmbedBuilder()
         .setColor("Yellow")

@@ -101,15 +101,11 @@ export async function getOrCreateRole(
 
 export function hasLeastRoleName(role: Role): boolean {
   // メンバー情報が取得できたら、最小ロールを持っているか確認
-  console.log("role:", JSON.stringify(role));
   const members = role.members.values();
   let flag = false;
   for (const member of members) {
-    console.log("member:", JSON.stringify(member));
     for (const r of member.roles.cache.values()) {
-      console.log("r:", JSON.stringify(r));
       if (r.name === leastRoleName) {
-        console.log("match!!");
         flag = true;
       }
     }
@@ -119,11 +115,7 @@ export function hasLeastRoleName(role: Role): boolean {
 
 export function returnRoleNameWithLeastTag(role: Role): string {
   const hasLeastRole = hasLeastRoleName(role);
-  console.log("hasLeastRole:", hasLeastRole);
-  return (
-    (role?.name || "名前がありません") +
-    (hasLeastRole ? ` (${leastRoleName})` : "")
-  );
+  return role.name + (hasLeastRole ? ` (${leastRoleName})` : "");
 }
 
 export function checkHasAcceptRole(member: GuildMember): boolean {

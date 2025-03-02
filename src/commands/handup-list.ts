@@ -58,8 +58,6 @@ export async function execute(interaction: CommandInteraction) {
       return;
     }
 
-    console.log("permissions:", caller.permissions);
-
     if (!caller.permissions.has(PermissionsBitField.Flags.Administrator)) {
       const embed = new EmbedBuilder()
         .setColor("Yellow")
@@ -115,7 +113,6 @@ export async function execute(interaction: CommandInteraction) {
       ([time, timeRoleNameAndTeamRole]) => {
         const header = `## ${time}時の挙手リスト`;
         const main = timeRoleNameAndTeamRole.map((teamRole) => {
-          console.log("teamRole:", teamRole);
           const team = returnRoleNameWithLeastTag(teamRole[1]);
           return `- **チーム:${team}**\n  - ロール(${teamRole[0]})`;
         });
