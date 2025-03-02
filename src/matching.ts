@@ -89,10 +89,10 @@ export async function matching({
 
     // teamRole.membersの存在を確認
     const participatingTeams: Set<Role> = new Set();
-    teamRoles.forEach((teamRole) => {
-      // teamRole.membersが存在するか確認
+    for (const teamRole of teamRoles) {
+      // teamRole.membersが存在しない場合、メンバー情報を取得
       if (!teamRole.members) {
-        return false;
+        await guild.members.fetch();
       }
 
       // メンバーが役職を持っているか確認
@@ -102,7 +102,7 @@ export async function matching({
       if (hasRole) {
         participatingTeams.add(teamRole);
       }
-    });
+    }
 
     if (participatingTeams.size < 2) {
       const embed = new EmbedBuilder()
@@ -117,12 +117,12 @@ export async function matching({
     const normalRoleTeams: Set<Role> = new Set();
 
     // 各チームのメンバー情報を確認する
-    teamRoles.forEach((teamRole) => {
+    for (const teamRole of teamRoles) {
       if (teamRole.members) {
         if (
           teamRole.members.every(
             (member: GuildMember) =>
-              member.roles.cache.some((r) => leastRoleName.includes(r.name)) // leastRoleNameが配列である前提
+              member.roles.cache.some((r) => r.name === leastRoleName) // leastRoleNameが文字列の場合
           )
         ) {
           leastRoleTeams.add(teamRole);
@@ -130,7 +130,7 @@ export async function matching({
           normalRoleTeams.add(teamRole);
         }
       }
-    });
+    }
 
     let excludedTeam: Role | null = null;
 
