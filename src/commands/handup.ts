@@ -5,16 +5,19 @@ import {
   GuildMember,
   CommandInteractionOptionResolver,
   EmbedBuilder,
+  MessageFlags,
 } from "discord.js";
 import {
-  getTimeRoleName,
   getOrCreateRole,
-  getAllTimeRoleNames,
   startRecruitment,
   isAcceptTime,
   checkHasAcceptRole,
   startBeforeLimitMinutes,
-} from "../utils.js";
+} from "../helper/utils.js";
+import {
+  createRoleNow,
+  isCreatedAndIsAtTimeRole,
+} from "../helper/role-name-helper.js";
 
 export const data = new SlashCommandBuilder()
   .setName("uc-handup")
@@ -24,7 +27,7 @@ export const data = new SlashCommandBuilder()
   );
 
 export async function execute(interaction: CommandInteraction) {
-  await interaction.deferReply({ ephemeral: true }); // ephemeral を true に設定して確実に本人のみに表示
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral }); // ephemeral を true に設定して確実に本人のみに表示
 
   const options =
     interaction.options as unknown as CommandInteractionOptionResolver;
@@ -34,7 +37,7 @@ export async function execute(interaction: CommandInteraction) {
     const embed = new EmbedBuilder()
       .setColor("Yellow")
       .setDescription(
-        `受付時間外です。受付可能時間は当日の${startRecruitment}時~試合開始${startBeforeLimitMinutes}分前 です。`
+        `受付時間外・または無効な対戦時間が選ばれました\n受付可能時間は当日の${startRecruitment}時~試合開始${startBeforeLimitMinutes}分前 です。`
       );
 
     await interaction.editReply({ embeds: [embed] });
@@ -51,18 +54,7 @@ export async function execute(interaction: CommandInteraction) {
     return;
   }
 
-  const timeRoleName = getTimeRoleName(time);
-  if (!timeRoleName) {
-    const embed = new EmbedBuilder()
-      .setColor("Red")
-      .setDescription("対戦時間が不正です。");
-
-    await interaction.editReply({ embeds: [embed] });
-    return;
-  }
-
   const caller = interaction.member as GuildMember;
-  const validTimeRoles = getAllTimeRoleNames();
 
   if (!checkHasAcceptRole(caller)) {
     const embed = new EmbedBuilder()
@@ -73,11 +65,15 @@ export async function execute(interaction: CommandInteraction) {
     return;
   }
 
-  if (
-    caller.roles.cache.some(
-      (r) => validTimeRoles.includes(r.name) && r.name === getTimeRoleName(time)
-    )
-  ) {
+  let alreadyHandUpThisTime = false;
+  const callerRoles = caller.roles.cache.values();
+  for (const role of callerRoles) {
+    if (isCreatedAndIsAtTimeRole(role.name, time)) {
+      alreadyHandUpThisTime = true;
+      break;
+    }
+  }
+  if (alreadyHandUpThisTime) {
     const embed = new EmbedBuilder()
       .setColor("Yellow")
       .setDescription("すでに挙手しています。");
@@ -85,6 +81,8 @@ export async function execute(interaction: CommandInteraction) {
     await interaction.editReply({ embeds: [embed] });
     return;
   }
+
+  const timeRoleName = createRoleNow(time);
 
   try {
     const timeRole = await getOrCreateRole(guild, timeRoleName);

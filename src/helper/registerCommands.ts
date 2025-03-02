@@ -1,6 +1,6 @@
 import { Routes } from "discord.js";
 import { REST } from "@discordjs/rest";
-import { commandHandlers } from "./commands/index.js";
+import { commandHandlers } from "../commands/index.js";
 import * as dotenv from "dotenv";
 dotenv.config();
 

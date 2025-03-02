@@ -4,15 +4,15 @@ import {
   SlashCommandBuilder,
   EmbedBuilder,
   CommandInteractionOptionResolver,
+  MessageFlags,
 } from "discord.js";
 import {
   checkHasAcceptRole,
-  getAllTimeRoleNames,
-  getTimeRoleName,
   isAcceptTime,
   startBeforeLimitMinutes,
   startRecruitment,
-} from "../utils.js";
+} from "../helper/utils.js";
+import { isCreatedAndIsAtTimeRole } from "../helper/role-name-helper.js";
 
 export const data = new SlashCommandBuilder()
   .setName("uc-handdown")
@@ -24,7 +24,7 @@ export const data = new SlashCommandBuilder()
   );
 
 export async function execute(interaction: CommandInteraction) {
-  await interaction.deferReply({ ephemeral: true }); // 遅延応答を開始、ephemeral を true に設定
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral }); // 遅延応答を開始、ephemeral を true に設定
 
   const options =
     interaction.options as unknown as CommandInteractionOptionResolver;
@@ -44,19 +44,8 @@ export async function execute(interaction: CommandInteraction) {
     const embed = new EmbedBuilder()
       .setColor("Yellow")
       .setDescription(
-        `受付時間外です。受付可能時間は当日の${startRecruitment}時~試合開始${startBeforeLimitMinutes}分前 です。`
+        `受付時間外・または無効な対戦時間が選ばれました\n受付可能時間は当日の${startRecruitment}時~試合開始${startBeforeLimitMinutes}分前 です。`
       );
-
-    await interaction.editReply({ embeds: [embed] });
-    return;
-  }
-
-  const selectedTimeRoleName = getTimeRoleName(time);
-
-  if (!selectedTimeRoleName) {
-    const embed = new EmbedBuilder()
-      .setColor("Yellow")
-      .setDescription("不正な対戦時間を指定してます");
 
     await interaction.editReply({ embeds: [embed] });
     return;
@@ -73,9 +62,8 @@ export async function execute(interaction: CommandInteraction) {
     return;
   }
 
-  const validTimeRoles = getAllTimeRoleNames();
-  const callerTimeRoles = caller.roles.cache.filter(
-    (r) => validTimeRoles.includes(r.name) && r.name === selectedTimeRoleName
+  const callerTimeRoles = caller.roles.cache.filter((r) =>
+    isCreatedAndIsAtTimeRole(r.name, time)
   );
   const roles = callerTimeRoles.values();
   let isRemoved = false;

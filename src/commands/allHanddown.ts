@@ -4,9 +4,9 @@ import {
   PermissionsBitField,
   SlashCommandBuilder,
   EmbedBuilder,
+  MessageFlags,
 } from "discord.js";
-import { getAllTimeRoleNames } from "../utils.js";
-import { rmTimeRole } from "../rmTimeRole.js";
+import { rmTimeRole } from "../helper/rmTimeRole.js";
 
 export const data = new SlashCommandBuilder()
   .setName("uc-all-handdown")
@@ -16,7 +16,7 @@ export const data = new SlashCommandBuilder()
 
 export async function execute(interaction: CommandInteraction) {
   try {
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
   } catch {
     console.error("遅延応答に失敗しました");
     return;
@@ -61,7 +61,6 @@ export async function execute(interaction: CommandInteraction) {
       // すべての時間ロールを取得
       const deletedRoles = await rmTimeRole({
         guild,
-        rollNames: getAllTimeRoleNames(),
       });
 
       const embed = new EmbedBuilder()

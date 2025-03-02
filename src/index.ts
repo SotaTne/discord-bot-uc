@@ -1,11 +1,11 @@
 // src/index.ts
 import { Client, GatewayIntentBits } from "discord.js";
 import * as dotenv from "dotenv";
-import { registerCommands } from "./registerCommands.js";
+import { registerCommands } from "./helper/registerCommands.js";
 import { commandHandlers } from "./commands/index.js"; // commands/index.ts でまとめる
 import { setupSchedules } from "./scheduler.js";
 import { server } from "./server.js";
-import { PORT } from "./utils.js";
+import { PORT } from "./helper/utils.js";
 dotenv.config();
 
 const client = new Client({

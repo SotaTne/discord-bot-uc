@@ -1,15 +1,14 @@
 import * as dotenv from "dotenv";
 import {
-  getAllTimeRoleNames,
   startBeforeLimitMinutes,
   startOclocks,
   startRecruitment,
-} from "./utils.js";
+} from "./helper/utils.js";
 import { CronJob } from "cron";
 import { ChannelType, Client, EmbedBuilder } from "discord.js";
 import { matching } from "./matching.js";
-import { recruitment } from "./recruitment.js";
-import { rmTimeRole } from "./rmTimeRole.js";
+import { recruitment } from "./helper/recruitment.js";
+import { rmTimeRole } from "./helper/rmTimeRole.js";
 
 dotenv.config();
 
@@ -152,7 +151,6 @@ async function sendAndRmTimeRoleMessage(client: Client) {
     try {
       const rmRoles = await rmTimeRole({
         guild,
-        rollNames: getAllTimeRoleNames(),
       });
       let message = "## 昨日の時間ロールの解除をします\n";
       if (rmRoles.length === 0) {

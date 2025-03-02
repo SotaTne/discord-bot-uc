@@ -1,9 +1,9 @@
 import { Guild, Role, GuildMember } from "discord.js";
-import { createHash } from "crypto";
+import { isCreatedAndIsAtTimeRole } from "./role-name-helper.js";
 
 // 挙手受付可能な時間帯（24時間制）
 export const startOclocks = new Set([/*14, 15,*/ 19, 20, 21, 22, 23]); // デフォルトは[ 21, 22, 23]
-export const startRecruitment = 12; // デフォルトは12
+export const startRecruitment = 1; // デフォルトは12
 export const acceptRolls: string[] = [
   "KMU",
   "UT",
@@ -21,7 +21,8 @@ export const acceptRolls: string[] = [
   "tym",
 ];
 export const leastRoleName = "試合数5";
-export const startBeforeLimitMinutes = 35; //デフォルトは7
+export const startBeforeLimitMinutes = 40; //デフォルトは7
+export const roleHeader = "time:";
 
 export const PORT: number = process.env.PORT
   ? parseInt(process.env.PORT)
@@ -51,6 +52,7 @@ export function isAcceptTime(wantTime: number): boolean {
   if (hour < startRecruitment) {
     return false;
   }
+  console.log((60 - startBeforeLimitMinutes) % 60 > minute);
   if (
     (60 - startBeforeLimitMinutes) % 60 > minute &&
     (wantTime - 1) % 24 === hour
@@ -65,42 +67,16 @@ export function isAcceptTime(wantTime: number): boolean {
   return false;
 }
 
-export const toSHA256 = (text: string): string => {
-  const hash = createHash("sha256");
-  hash.update(text);
-  return hash.digest("hex");
-};
-
-export const parseTimeRoleName = (time: number): string => {
-  return `time:${toSHA256(time.toString())}`;
-};
-
-export const getTimeRoleTuples: () => [number, string][] = () => {
-  const tuples: [number, string][] = [];
-  startOclocks.forEach((time) => {
-    tuples.push([time, parseTimeRoleName(time)]);
-  });
-  return tuples;
-};
-
-export function getTimeRoleName(time: number): string | null {
-  if (!startOclocks.has(time)) {
-    return null;
-  }
-  return parseTimeRoleName(time);
-}
-
 export function getRoleByName(
   roleName: string,
   guild: Guild
 ): Role | undefined {
-  return guild.roles.cache.find((role) => role.name === roleName);
-}
-
-export function getAllTimeRoleNames(): string[] {
-  const timeRoleNames: string[] = [];
-  startOclocks.forEach((hour) => timeRoleNames.push(parseTimeRoleName(hour)));
-  return timeRoleNames;
+  for (const role of guild.roles.cache.values()) {
+    if (role.name === roleName) {
+      return role;
+    }
+  }
+  return undefined;
 }
 
 export async function getOrCreateRole(
@@ -123,35 +99,66 @@ export async function getOrCreateRole(
   return role;
 }
 
-export async function hasLeastRoleName(role: Role): Promise<boolean> {
-  // role.membersが存在しない場合はfetchしてメンバー情報を取得する
-  if (!role.members) {
-    try {
-      // メンバー情報を明示的に取得する
-      await role.guild.members.fetch();
-    } catch (error) {
-      console.error(
-        `ロール "${role.name}" のメンバー情報を取得できませんでした:`,
-        error
-      );
-      return false;
+export function hasLeastRoleName(role: Role): boolean {
+  // メンバー情報が取得できたら、最小ロールを持っているか確認
+  console.log("role:", JSON.stringify(role));
+  const members = role.members.values();
+  let flag = false;
+  for (const member of members) {
+    console.log("member:", JSON.stringify(member));
+    for (const r of member.roles.cache.values()) {
+      console.log("r:", JSON.stringify(r));
+      if (r.name === leastRoleName) {
+        console.log("match!!");
+        flag = true;
+      }
     }
   }
-
-  // メンバー情報が取得できたら、最小ロールを持っているか確認
-  return role.members.some((member: GuildMember) =>
-    member.roles.cache.some((r) => r.name === leastRoleName)
-  );
+  return flag;
 }
 
-export async function returnRoleNameWithLeastTag(role: Role): Promise<string> {
+export function returnRoleNameWithLeastTag(role: Role): string {
+  const hasLeastRole = hasLeastRoleName(role);
+  console.log("hasLeastRole:", hasLeastRole);
   return (
-    role?.name ||
-    "名前がありません" +
-      ((await hasLeastRoleName(role)) ? ` (${leastRoleName})` : "")
+    (role?.name || "名前がありません") +
+    (hasLeastRole ? ` (${leastRoleName})` : "")
   );
 }
 
 export function checkHasAcceptRole(member: GuildMember): boolean {
-  return member.roles.cache.some((r) => acceptRolls.includes(r.name));
+  let flag = false;
+  for (const role of member.roles.cache.values()) {
+    if (acceptRolls.includes(role.name)) {
+      flag = true;
+    }
+  }
+  return flag;
+}
+
+export async function getAllRoleByTargetTime(
+  targetTime: number,
+  guild: Guild
+): Promise<Role[]> {
+  if (!startOclocks.has(targetTime)) {
+    return [];
+  }
+  const roles: Set<Role> = new Set();
+  for (const role of guild.roles.cache.values()) {
+    if (isCreatedAndIsAtTimeRole(role.name, targetTime)) {
+      roles.add(role);
+    }
+  }
+  return Array.from(roles);
+}
+
+export async function getTimeRolesTuple(
+  guild: Guild
+): Promise<[number, Role[]][]> {
+  const tuple: [number, Role[]][] = [];
+  for (const time of startOclocks) {
+    const roles = await getAllRoleByTargetTime(time, guild);
+    tuple.push([time, roles]);
+  }
+  return tuple;
 }

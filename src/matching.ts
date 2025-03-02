@@ -1,18 +1,14 @@
-import {
-  ChannelType,
-  Client,
-  GuildMember,
-  Role,
-  EmbedBuilder,
-} from "discord.js";
+import { ChannelType, Client, Role, EmbedBuilder } from "discord.js";
 import {
   acceptRolls,
-  getRoleByName,
-  getTimeRoleName,
-  leastRoleName,
+  hasLeastRoleName,
   returnRoleNameWithLeastTag,
   startOclocks,
-} from "./utils.js";
+} from "./helper/utils.js";
+import {
+  getTimeStampFromRoleName,
+  isCreatedAndIsAtTimeRole,
+} from "./helper/role-name-helper.js";
 
 export async function matching({
   client,
@@ -25,8 +21,7 @@ export async function matching({
   guildId: string;
   time: number;
 }) {
-  const timeRoleName = getTimeRoleName(time);
-
+  // const timeRoleName = getTimeRoleName(time);
   const channel = await client.channels.fetch(channelId);
   const guild = await client.guilds.fetch(guildId);
 
@@ -36,147 +31,126 @@ export async function matching({
   }
 
   if (!startOclocks.has(time)) {
-    const embed = new EmbedBuilder()
-      .setColor("Yellow")
-      .setDescription("試合の受付時間外にスケジュールされました");
-
-    await channel.send({ embeds: [embed] });
-    return;
-  }
-
-  if (!timeRoleName) {
-    const embed = new EmbedBuilder()
-      .setColor("Red")
-      .setDescription("不正な対戦時間がスケジュールされました");
-
-    await channel.send({ embeds: [embed] });
+    await channel.send({
+      embeds: [
+        new EmbedBuilder()
+          .setColor("Yellow")
+          .setDescription("試合の受付時間外にスケジュールされました"),
+      ],
+    });
     return;
   }
 
   if (!guild) {
-    const embed = new EmbedBuilder()
-      .setColor("Red")
-      .setDescription("サーバー情報を取得できませんでした");
-
-    await channel.send({ embeds: [embed] });
+    await channel.send({
+      embeds: [
+        new EmbedBuilder()
+          .setColor("Red")
+          .setDescription("サーバー情報を取得できませんでした"),
+      ],
+    });
     return;
   }
 
-  const timeRole = getRoleByName(timeRoleName, guild);
-
-  if (!timeRole) {
-    const embed = new EmbedBuilder()
-      .setColor("Yellow")
-      .setDescription("対象時間ロールをつけているユーザーがいませんでした");
-
-    await channel.send({ embeds: [embed] });
-    return;
-  }
+  //  const timeRoles: Set<Role> = getRoleByName(timeRoleName, guild);
+  // if (!timeRole) {
+  //   await channel.send({
+  //     embeds: [
+  //       new EmbedBuilder()
+  //         .setColor("Yellow")
+  //         .setDescription("対象時間ロールをつけているユーザーがいませんでした"),
+  //     ],
+  //   });
+  //   return;
+  // }
 
   try {
-    // acceptRollsに含まれるロール && 指定された時間ロールを持つすべてのチームロールを取得
     const teamRoles: Set<Role> = new Set();
     for (const acceptRoll of acceptRolls) {
-      const role = guild.roles.cache.find((role) => role.name === acceptRoll);
-
-      // ロールが見つからない場合の処理
-      if (!role) {
-        console.warn(`ロール ${acceptRoll} がサーバーに存在しません`);
-        continue; // ロールが見つからなければ、次のロールに進む
-      }
-      teamRoles.add(role);
+      const role = guild.roles.cache.find((r) => r.name === acceptRoll);
+      if (role) teamRoles.add(role);
     }
 
-    // teamRole.membersの存在を確認
-    const participatingTeams: Set<Role> = new Set();
+    // Role + timestamp
+    const participatingTeams: Set<[Role, number]> = new Set();
     for (const teamRole of teamRoles) {
-      // teamRole.membersが存在しない場合、メンバー情報を取得
-      if (!teamRole.members) {
-        await guild.members.fetch();
+      if (!teamRole.members) await guild.members.fetch();
+      // 代わりに有効なロールかを調べる
+      let timeStamp: null | number = null;
+      for (const member of teamRole.members.values()) {
+        for (const role of member.roles.cache.values()) {
+          const roleName = role.name;
+          if (isCreatedAndIsAtTimeRole(roleName, time)) {
+            timeStamp = getTimeStampFromRoleName(roleName);
+            break;
+          }
+        }
       }
-
-      // メンバーが役職を持っているか確認
-      const hasRole = teamRole.members.some((member: GuildMember) =>
-        member.roles.cache.some((r) => r.name === timeRoleName)
-      );
-      if (hasRole) {
-        participatingTeams.add(teamRole);
+      if (timeStamp) {
+        participatingTeams.add([teamRole, teamRole.createdTimestamp]);
       }
     }
 
     if (participatingTeams.size < 2) {
-      const embed = new EmbedBuilder()
-        .setColor("Yellow")
-        .setDescription("試合に参加するチームが十分ではありません");
-
-      await channel.send({ embeds: [embed] });
+      await channel.send({
+        embeds: [
+          new EmbedBuilder()
+            .setColor("Yellow")
+            .setDescription("試合に参加するチームが十分ではありません"),
+        ],
+      });
       return;
     }
 
-    const leastRoleTeams: Set<Role> = new Set();
-    const normalRoleTeams: Set<Role> = new Set();
-
-    // 各チームのメンバー情報を確認する
-    for (const teamRole of teamRoles) {
-      if (teamRole.members) {
-        if (
-          teamRole.members.every(
-            (member: GuildMember) =>
-              member.roles.cache.some((r) => r.name === leastRoleName) // leastRoleNameが文字列の場合
-          )
-        ) {
-          leastRoleTeams.add(teamRole);
-        } else {
-          normalRoleTeams.add(teamRole);
-        }
-      }
+    const leastRoleTeams: [Role, number][] = [];
+    const normalRoleTeams: [Role, number][] = [];
+    for (const teamRole of participatingTeams) {
+      (hasLeastRoleName(teamRole[0]) ? leastRoleTeams : normalRoleTeams).push(
+        teamRole
+      );
     }
 
     let excludedTeam: Role | null = null;
-
-    let finalTeams: Role[];
-
-    if (participatingTeams.size % 2 !== 0) {
-      if (leastRoleTeams.size > 0) {
-        finalTeams = Array.from(leastRoleTeams);
-        finalTeams.sort((a, b) => a.createdTimestamp - b.createdTimestamp);
-        excludedTeam = finalTeams.pop() || null;
-      } else {
-        finalTeams = Array.from(normalRoleTeams);
-        finalTeams.sort((a, b) => a.createdTimestamp - b.createdTimestamp);
-        excludedTeam = finalTeams.pop() || null;
+    let finalTeams = [...participatingTeams];
+    if (finalTeams.length % 2 !== 0) {
+      const sortedTeams = (
+        leastRoleTeams.length > 0 ? leastRoleTeams : normalRoleTeams
+      ).sort((a, b) => a[1] - b[1]);
+      const poped = sortedTeams.pop();
+      if (poped) {
+        excludedTeam = poped[0];
       }
-      finalTeams = finalTeams.concat(Array.from(normalRoleTeams));
-    } else {
-      finalTeams = Array.from(participatingTeams);
+      finalTeams = finalTeams.filter((t) => t[0] !== excludedTeam);
     }
 
-    // チームをランダムにシャッフル
-    const shuffledTeams = finalTeams.sort(() => Math.random() - 0.5);
+    finalTeams.sort(() => Math.random() - 0.5);
 
     let matchMessage = `## 試合 (時間:${time}時) の組み合わせ:\n`;
-    for (let i = 0; i < shuffledTeams.length; i += 2) {
-      matchMessage += `- **${await returnRoleNameWithLeastTag(
-        shuffledTeams[i]
-      )}** vs **${await returnRoleNameWithLeastTag(shuffledTeams[i + 1])}**\n`;
+    for (let i = 0; i < finalTeams.length; i += 2) {
+      matchMessage += `- **${returnRoleNameWithLeastTag(
+        finalTeams[i][0]
+      )}** vs **${returnRoleNameWithLeastTag(finalTeams[i + 1][0])}**\n`;
     }
-
     if (excludedTeam) {
-      matchMessage += `**${await returnRoleNameWithLeastTag(
+      matchMessage += `**${returnRoleNameWithLeastTag(
         excludedTeam
       )}** はチーム数が奇数のため、マッチングしませんでした\n`;
     }
-    matchMessage += `<@&${timeRole.id}>`;
-
-    // マッチング結果は通常のテキストメッセージで送信（メンションが機能するように）
+    for (const team of finalTeams) {
+      matchMessage += `<@&${team[0].id}>\n`;
+    }
+    if (excludedTeam) {
+      matchMessage += `<@&${excludedTeam.id}>\n`;
+    }
     await channel.send(matchMessage);
   } catch (error) {
     console.error("試合マッチング処理中にエラーが発生:", error);
-
-    const embed = new EmbedBuilder()
-      .setColor("Red")
-      .setDescription("試合マッチング処理中にエラーが発生しました");
-
-    await channel.send({ embeds: [embed] });
+    await channel.send({
+      embeds: [
+        new EmbedBuilder()
+          .setColor("Red")
+          .setDescription("試合マッチング処理中にエラーが発生しました"),
+      ],
+    });
   }
 }

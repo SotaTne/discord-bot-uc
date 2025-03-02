@@ -6,13 +6,17 @@ import {
   Role,
   SlashCommandBuilder,
   EmbedBuilder,
+  MessageFlags,
 } from "discord.js";
 import {
   acceptRolls,
-  getAllTimeRoleNames,
-  getTimeRoleTuples,
   returnRoleNameWithLeastTag,
-} from "../utils.js";
+  startOclocks,
+} from "../helper/utils.js";
+import {
+  isCreatedAndIsAtTimeRole,
+  isCreatedRole,
+} from "../helper/role-name-helper.js";
 
 export const data = new SlashCommandBuilder()
   .setName("uc-handup-list")
@@ -21,7 +25,7 @@ export const data = new SlashCommandBuilder()
   );
 export async function execute(interaction: CommandInteraction) {
   try {
-    await interaction.deferReply({ ephemeral: true }); // ephemeral を true に設定して確実に本人のみに表示
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral }); // ephemeral を true に設定して確実に本人のみに表示
   } catch {
     console.error("遅延応答に失敗しました");
 
@@ -67,47 +71,57 @@ export async function execute(interaction: CommandInteraction) {
       return;
     }
 
-    const timeRoleNameTuples = getTimeRoleTuples();
-    const allTimeRoleNames = getAllTimeRoleNames();
     const teamRoles = Array.from(
       guild.roles.cache
         .filter((role) => acceptRolls.includes(role.name))
         .values()
     );
+
+    // 時間のロールを持っているすべてのチームロールを取得
     const participatingTeams = teamRoles.filter((teamRole) =>
       teamRole.members.some((member: GuildMember) =>
-        member.roles.cache.some((r) => allTimeRoleNames.includes(r.name))
+        member.roles.cache.some((r) => isCreatedRole(r.name))
       )
     );
 
-    const timeTeamRoleTuple: [number, string, Role[]][] = [];
+    // 時間 [時間のロール名 , チームのロール] のタプルを作成
+    // 型は [number, [string, Role][]][]
+    const timeTeamRoleTuple: [number, [string, Role][]][] = [];
 
-    timeRoleNameTuples.forEach((timeRoleNameTuple) => {
-      const [time, roleName] = timeRoleNameTuple;
-      const role = guild.roles.cache.find((role) => role.name === roleName);
-      if (!role) {
-        return;
+    startOclocks.forEach((time) => {
+      // 現在時間のロールを持っているすべてのチームを取得
+      // 取得する際に、そのロールの持っている時間のロール[]を取得
+      // そのロール[]の名前を,で結合する
+      const timeRoleNameAndTeamRole: [string, Role][] = [];
+      for (const teamRole of participatingTeams) {
+        const roleNames: string[] = [];
+        for (const member of teamRole.members.values()) {
+          for (const role of member.roles.cache.values()) {
+            if (isCreatedAndIsAtTimeRole(role.name, time)) {
+              roleNames.push(role.name);
+            }
+          }
+        }
+        if (roleNames.length > 0) {
+          timeRoleNameAndTeamRole.push([roleNames.join(", "), teamRole]);
+        }
       }
-      // このロールを持っているすべてのチームのロールを取得する
-      const teamRoles = participatingTeams.filter((teamRole) =>
-        teamRole.members.some((member: GuildMember) =>
-          member.roles.cache.some((r) => r.name === roleName)
-        )
-      );
-      timeTeamRoleTuple.push([time, roleName, teamRoles]);
+      if (timeRoleNameAndTeamRole.length > 0) {
+        timeTeamRoleTuple.push([time, timeRoleNameAndTeamRole]);
+      }
     });
 
-    // ここで非同期の処理を待機するために Promise.all を使用
-    const resultMessages = await Promise.all(
-      timeTeamRoleTuple.map(async ([time, roleName, teamRoles]) => {
-        const header = `## ${time}時の挙手リスト\n(ロール:${roleName})`;
-        const main = await Promise.all(
-          teamRoles.map(async (teamRole) => {
-            return `- **チーム:${await returnRoleNameWithLeastTag(teamRole)}**`;
-          })
-        );
+    const resultMessages = timeTeamRoleTuple.map(
+      ([time, timeRoleNameAndTeamRole]) => {
+        const header = `## ${time}時の挙手リスト`;
+        const main = timeRoleNameAndTeamRole.map((teamRole) => {
+          console.log("teamRole:", teamRole);
+          const team = returnRoleNameWithLeastTag(teamRole[1]);
+          return `- **チーム:${team}**\n  - ロール(${teamRole[0]})`;
+        });
+
         return [header, ...main].join("\n");
-      })
+      }
     );
 
     const message = "# 現在の挙手リスト\n" + resultMessages.join("\n");
