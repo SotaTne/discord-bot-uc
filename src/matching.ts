@@ -77,13 +77,13 @@ export async function matching({
     // acceptRollsに含まれるロール && 指定された時間ロールを持つすべてのチームロールを取得
     const teamRoles = Array.from(
       guild.roles.cache
-        .filter((role) => acceptRolls.includes(role.name))
+        .filter((role) => acceptRolls.includes(role?.name || ""))
         .values()
     );
 
     const participatingTeams = teamRoles.filter((teamRole) =>
       teamRole.members.some((member: GuildMember) =>
-        member.roles.cache.some((r) => r.name === timeRoleName)
+        member.roles.cache.some((r) => r?.name || "" === timeRoleName)
       )
     );
 
