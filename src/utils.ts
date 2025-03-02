@@ -3,7 +3,7 @@ import { createHash } from "crypto";
 
 // 挙手受付可能な時間帯（24時間制）
 export const startOclocks: number[] = [21, 22, 23];
-export const startRecruitment = 12;
+export const startRecruitment = 13;
 export const acceptRolls: string[] = [
   "KMU",
   "UT",
@@ -42,6 +42,10 @@ export function isAcceptTime(wantTime: number): boolean {
   const now = getJPDate();
   const hour = now.getUTCHours();
   const minute = now.getUTCMinutes();
+
+  console.log("now:", now);
+  console.log("hour:", hour);
+  console.log("minute:", minute);
 
   // wantTimeの7分前(n-1)時の53分まで受付
   if (
