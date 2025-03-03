@@ -52,23 +52,16 @@ export async function matching({
     return;
   }
 
-  //  const timeRoles: Set<Role> = getRoleByName(timeRoleName, guild);
-  // if (!timeRole) {
-  //   await channel.send({
-  //     embeds: [
-  //       new EmbedBuilder()
-  //         .setColor("Yellow")
-  //         .setDescription("対象時間ロールをつけているユーザーがいませんでした"),
-  //     ],
-  //   });
-  //   return;
-  // }
-
   try {
     const teamRoles: Set<Role> = new Set();
+    const teamRoleNamesSet: Set<string> = new Set();
     for (const acceptRoll of acceptRolls) {
       const role = guild.roles.cache.find((r) => r.name === acceptRoll);
-      if (role) teamRoles.add(role);
+      if (role) {
+        if (teamRoleNamesSet.has(role.name)) continue;
+        teamRoles.add(role);
+        teamRoleNamesSet.add(role.name);
+      }
     }
 
     // Role + timestamp
