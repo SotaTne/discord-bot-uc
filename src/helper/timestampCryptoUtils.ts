@@ -30,24 +30,3 @@ export function sleep(ms: number): Promise<void> {
 export function getEncodedNow(): string {
   return encodeUnixTimestamp(Math.floor(Date.now() / 1000));
 }
-
-export async function demo() {
-  const n = getEncodedNow();
-  const decoded = decodeUnixTimestamp(n);
-  console.log("decoded:", decoded);
-  await sleep(4000);
-  const newNow = getEncodedNow();
-  const newDecoded = decodeUnixTimestamp(newNow);
-  const newlist = [newDecoded, decoded];
-  console.log("newlist:", newlist);
-  console.log("newNow:", newNow);
-  console.log("true", decoded < newDecoded);
-  // sort
-  newlist.sort((a, b) => a - b);
-  // newest pop
-  const poped = newlist.pop();
-  console.log("poped:", poped);
-  console.log("sorted:", newlist);
-}
-
-demo();

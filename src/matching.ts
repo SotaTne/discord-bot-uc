@@ -105,12 +105,27 @@ export async function matching({
       )}** vs **${returnRoleNameWithLeastTag(
         participatingTeams[i + 1][0]
       )}**\n`;
+      // timeStampごとのにチームをconsole.log
+      console.log(
+        `timeStamp: ${
+          participatingTeams[i][1]
+        } team: ${returnRoleNameWithLeastTag(
+          participatingTeams[i][0]
+        )} vs timeStamp: ${
+          participatingTeams[i + 1][1]
+        } team: ${returnRoleNameWithLeastTag(participatingTeams[i + 1][0])}`
+      );
     }
 
     if (excludedTeam) {
       matchMessage += `**${returnRoleNameWithLeastTag(
         excludedTeam
       )}** はチーム数が奇数のため、マッチングしませんでした\n`;
+      console.log(
+        `timeStamp: ${
+          participatingTeams[participatingTeams.length - 1][1]
+        } team: ${returnRoleNameWithLeastTag(excludedTeam)}`
+      );
     }
 
     for (const team of participatingTeams) {
