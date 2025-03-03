@@ -1,7 +1,6 @@
 import { ChannelType, Client, Role, EmbedBuilder } from "discord.js";
 import {
   acceptRolls,
-  hasLeastRoleName,
   returnRoleNameWithLeastTag,
   startOclocks,
 } from "./helper/utils.js";
@@ -21,7 +20,6 @@ export async function matching({
   guildId: string;
   time: number;
 }) {
-  // const timeRoleName = getTimeRoleName(time);
   const channel = await client.channels.fetch(channelId);
   const guild = await client.guilds.fetch(guildId);
 
@@ -64,11 +62,9 @@ export async function matching({
       }
     }
 
-    // Role + timestamp
-    const participatingTeams: Set<[Role, number]> = new Set();
+    const participatingTeams: [Role, number][] = [];
     for (const teamRole of teamRoles) {
       if (!teamRole.members) await guild.members.fetch();
-      // 代わりに有効なロールかを調べる
       let timeStamp: null | number = null;
       for (const member of teamRole.members.values()) {
         for (const role of member.roles.cache.values()) {
@@ -79,12 +75,12 @@ export async function matching({
           }
         }
       }
-      if (timeStamp) {
-        participatingTeams.add([teamRole, teamRole.createdTimestamp]);
+      if (timeStamp !== null) {
+        participatingTeams.push([teamRole, timeStamp]);
       }
     }
 
-    if (participatingTeams.size < 2) {
+    if (participatingTeams.length < 2) {
       await channel.send({
         embeds: [
           new EmbedBuilder()
@@ -95,58 +91,35 @@ export async function matching({
       return;
     }
 
-    const leastRoleTeams: [Role, number][] = [];
-    const normalRoleTeams: [Role, number][] = [];
-    for (const teamRole of participatingTeams) {
-      (hasLeastRoleName(teamRole[0]) ? leastRoleTeams : normalRoleTeams).push(
-        teamRole
-      );
-    }
+    participatingTeams.sort((a, b) => b[1] - a[1]); // 降順ソート（新しい順）
 
     let excludedTeam: Role | null = null;
-    let finalTeams = [...participatingTeams];
-    if (finalTeams.length % 2 !== 0) {
-      // チーム数が奇数の場合
-      let sortedTeams;
-      if (leastRoleTeams.length > 0) {
-        // least役割を持つチームが存在する場合、それらを優先的に除外候補とする
-        sortedTeams = [...leastRoleTeams].sort((a, b) => b[1] - a[1]); // 降順ソート（新しい順）
-      } else {
-        // least役割を持つチームがない場合、通常のチームをソート
-        sortedTeams = [...normalRoleTeams].sort((a, b) => b[1] - a[1]); // 降順ソート（新しい順）
-      }
-
-      // 最も新しいチームを取得
-      const poped = sortedTeams.shift(); // 先頭（最も新しい）チームを取得
-      if (poped) {
-        excludedTeam = poped[0];
-        // finalTeamsから除外チームを取り除く
-        finalTeams = finalTeams.filter(
-          (team) => team[0].id !== excludedTeam?.id
-        );
-      }
+    if (participatingTeams.length % 2 !== 0) {
+      excludedTeam = participatingTeams.shift()?.[0] || null;
     }
-
-    finalTeams.sort(() => Math.random() - 0.5);
 
     let matchMessage = `## 試合 (時間:${time}時) の組み合わせ:\n`;
-    for (let i = 0; i < finalTeams.length; i += 2) {
+    for (let i = 0; i < participatingTeams.length; i += 2) {
       matchMessage += `- **${returnRoleNameWithLeastTag(
-        finalTeams[i][0]
-      )}** vs **${returnRoleNameWithLeastTag(finalTeams[i + 1][0])}**\n`;
+        participatingTeams[i][0]
+      )}** vs **${returnRoleNameWithLeastTag(
+        participatingTeams[i + 1][0]
+      )}**\n`;
     }
+
     if (excludedTeam) {
       matchMessage += `**${returnRoleNameWithLeastTag(
         excludedTeam
       )}** はチーム数が奇数のため、マッチングしませんでした\n`;
     }
-    matchMessage += `これ以降本日の${time}時の挙手の受付はできません\n`;
-    for (const team of finalTeams) {
+
+    for (const team of participatingTeams) {
       matchMessage += `<@&${team[0].id}>\n`;
     }
     if (excludedTeam) {
       matchMessage += `<@&${excludedTeam.id}>\n`;
     }
+
     await channel.send(matchMessage);
   } catch (error) {
     console.error("試合マッチング処理中にエラーが発生:", error);
