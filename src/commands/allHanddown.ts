@@ -16,9 +16,20 @@ export const data = new SlashCommandBuilder()
 
 export async function execute(interaction: CommandInteraction) {
   try {
-    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral }); // 遅延応答を開始、ephemeral を true に設定
   } catch {
     console.error("遅延応答に失敗しました");
+    const embed = new EmbedBuilder()
+      .setColor("Red")
+      .setDescription("エラー: 遅延応答に失敗しました。");
+    try {
+      await interaction.reply({
+        embeds: [embed],
+        flags: MessageFlags.Ephemeral,
+      });
+    } catch (error) {
+      console.error("エラーメッセージの送信に失敗:", error);
+    }
     return;
   }
 

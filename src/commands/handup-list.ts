@@ -25,15 +25,20 @@ export const data = new SlashCommandBuilder()
   );
 export async function execute(interaction: CommandInteraction) {
   try {
-    await interaction.deferReply({ flags: MessageFlags.Ephemeral }); // ephemeral を true に設定して確実に本人のみに表示
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral }); // 遅延応答を開始、ephemeral を true に設定
   } catch {
     console.error("遅延応答に失敗しました");
-
     const embed = new EmbedBuilder()
       .setColor("Red")
       .setDescription("エラー: 遅延応答に失敗しました。");
-
-    await interaction.editReply({ embeds: [embed] });
+    try {
+      await interaction.reply({
+        embeds: [embed],
+        flags: MessageFlags.Ephemeral,
+      });
+    } catch (error) {
+      console.error("エラーメッセージの送信に失敗:", error);
+    }
     return;
   }
 
@@ -70,9 +75,7 @@ export async function execute(interaction: CommandInteraction) {
     }
 
     const teamRoles = Array.from(
-      guild.roles.cache
-        .filter((role) => acceptRolls.includes(role.name))
-        .values()
+      guild.roles.cache.filter((role) => acceptRolls.has(role.name)).values()
     );
 
     // 時間のロールを持っているすべてのチームロールを取得
@@ -92,16 +95,19 @@ export async function execute(interaction: CommandInteraction) {
       // そのロール[]の名前を,で結合する
       const timeRoleNameAndTeamRole: [string, Role][] = [];
       for (const teamRole of participatingTeams) {
-        const roleNames: string[] = [];
+        const roleNames: Set<string> = new Set();
         for (const member of teamRole.members.values()) {
           for (const role of member.roles.cache.values()) {
             if (isCreatedAndIsAtTimeRole(role.name, time)) {
-              roleNames.push(role.name);
+              roleNames.add(role.name);
             }
           }
         }
-        if (roleNames.length > 0) {
-          timeRoleNameAndTeamRole.push([roleNames.join(", "), teamRole]);
+        if (roleNames.size > 0) {
+          timeRoleNameAndTeamRole.push([
+            Array.from(roleNames).join(" ・ "),
+            teamRole,
+          ]);
         }
       }
       if (timeRoleNameAndTeamRole.length > 0) {

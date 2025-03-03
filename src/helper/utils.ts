@@ -2,9 +2,9 @@ import { Guild, Role, GuildMember } from "discord.js";
 import { isCreatedAndIsAtTimeRole } from "./role-name-helper.js";
 
 // 挙手受付可能な時間帯（24時間制）
-export const startOclocks = new Set([/*14, 15,*/ 19, 20, 21, 22, 23]); // デフォルトは[ 21, 22, 23]
+export const startOclocks = new Set([/*14, 15,*/ 19, 20, 21, 22, 23, 3]); // デフォルトは[ 21, 22, 23]
 export const startRecruitment = 1; // デフォルトは12
-export const acceptRolls: string[] = [
+export const acceptRolls: Set<string> = new Set([
   "KMU",
   "UT",
   "NGT",
@@ -19,9 +19,9 @@ export const acceptRolls: string[] = [
   "Hosei",
   "K!T",
   "tym",
-];
+]);
 export const leastRoleName = "試合数5";
-export const startBeforeLimitMinutes = 40; //デフォルトは7
+export const startBeforeLimitMinutes = 5; //デフォルトは7
 export const roleHeader = "time:";
 
 export const PORT: number = process.env.PORT
@@ -121,7 +121,7 @@ export function returnRoleNameWithLeastTag(role: Role): string {
 export function checkHasAcceptRole(member: GuildMember): boolean {
   let flag = false;
   for (const role of member.roles.cache.values()) {
-    if (acceptRolls.includes(role.name)) {
+    if (acceptRolls.has(role.name)) {
       flag = true;
     }
   }
