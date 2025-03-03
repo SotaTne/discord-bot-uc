@@ -129,6 +129,7 @@ export async function matching({
         excludedTeam
       )}** はチーム数が奇数のため、マッチングしませんでした\n`;
     }
+    matchMessage += `これ以降本日の${time}時の挙手の受付はできません\n`;
     for (const team of finalTeams) {
       matchMessage += `<@&${team[0].id}>\n`;
     }
