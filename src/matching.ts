@@ -106,14 +106,25 @@ export async function matching({
     let excludedTeam: Role | null = null;
     let finalTeams = [...participatingTeams];
     if (finalTeams.length % 2 !== 0) {
-      const sortedTeams = (
-        leastRoleTeams.length > 0 ? leastRoleTeams : normalRoleTeams
-      ).sort((a, b) => a[1] - b[1]);
-      const poped = sortedTeams.pop();
+      // チーム数が奇数の場合
+      let sortedTeams;
+      if (leastRoleTeams.length > 0) {
+        // least役割を持つチームが存在する場合、それらを優先的に除外候補とする
+        sortedTeams = [...leastRoleTeams].sort((a, b) => b[1] - a[1]); // 降順ソート（新しい順）
+      } else {
+        // least役割を持つチームがない場合、通常のチームをソート
+        sortedTeams = [...normalRoleTeams].sort((a, b) => b[1] - a[1]); // 降順ソート（新しい順）
+      }
+
+      // 最も新しいチームを取得
+      const poped = sortedTeams.shift(); // 先頭（最も新しい）チームを取得
       if (poped) {
         excludedTeam = poped[0];
+        // finalTeamsから除外チームを取り除く
+        finalTeams = finalTeams.filter(
+          (team) => team[0].id !== excludedTeam?.id
+        );
       }
-      finalTeams = finalTeams.filter((t) => t[0] !== excludedTeam);
     }
 
     finalTeams.sort(() => Math.random() - 0.5);
