@@ -1,13 +1,13 @@
-import { ChannelType, Client, Role, EmbedBuilder } from "discord.js";
+import { Client, ChannelType, EmbedBuilder, Role } from "discord.js";
 import {
+  isCreatedAndIsAtTimeRole,
+  getTimeStampFromRoleName,
+} from "./helper/role-name-helper.js";
+import {
+  startOclocks,
   acceptRolls,
   returnRoleNameWithLeastTag,
-  startOclocks,
 } from "./helper/utils.js";
-import {
-  getTimeStampFromRoleName,
-  isCreatedAndIsAtTimeRole,
-} from "./helper/role-name-helper.js";
 
 export async function matching({
   client,
@@ -91,43 +91,76 @@ export async function matching({
       return;
     }
 
+    // ソート前の配列内容をログ出力（デバッグ用）
+    console.log("ソート前のparticipatingTeams:");
+    participatingTeams.forEach((team) => {
+      console.log(
+        `Team: ${returnRoleNameWithLeastTag(team[0])}, TimeStamp: ${team[1]}`
+      );
+    });
+
     participatingTeams.sort((a, b) => b[1] - a[1]); // 降順ソート（新しい順）
+
+    // ソート後の配列内容をログ出力（デバッグ用）
+    console.log("ソート後のparticipatingTeams:");
+    participatingTeams.forEach((team) => {
+      console.log(
+        `Team: ${returnRoleNameWithLeastTag(team[0])}, TimeStamp: ${team[1]}`
+      );
+    });
 
     let excludedTeam: Role | null = null;
     if (participatingTeams.length % 2 !== 0) {
+      // 先頭の要素（タイムスタンプが最大の要素）を取得して除外
       excludedTeam = participatingTeams.shift()?.[0] || null;
+
+      // excludedTeamのログ出力（デバッグ用）
+      if (excludedTeam) {
+        console.log(
+          `除外されたチーム: ${returnRoleNameWithLeastTag(excludedTeam)}`
+        );
+      }
+
+      // 除外後の配列内容をログ出力（デバッグ用）
+      console.log("除外後のparticipatingTeams:");
+      participatingTeams.forEach((team) => {
+        console.log(
+          `Team: ${returnRoleNameWithLeastTag(team[0])}, TimeStamp: ${team[1]}`
+        );
+      });
     }
 
     let matchMessage = `## 試合 (時間:${time}時) の組み合わせ:\n`;
     for (let i = 0; i < participatingTeams.length; i += 2) {
-      matchMessage += `- **${returnRoleNameWithLeastTag(
-        participatingTeams[i][0]
-      )}** vs **${returnRoleNameWithLeastTag(
-        participatingTeams[i + 1][0]
-      )}**\n`;
-      // timeStampごとのにチームをconsole.log
-      console.log(
-        `timeStamp: ${
-          participatingTeams[i][1]
-        } team: ${returnRoleNameWithLeastTag(
+      if (i + 1 < participatingTeams.length) {
+        // 配列の範囲を確認
+        matchMessage += `- **${returnRoleNameWithLeastTag(
           participatingTeams[i][0]
-        )} vs timeStamp: ${
-          participatingTeams[i + 1][1]
-        } team: ${returnRoleNameWithLeastTag(participatingTeams[i + 1][0])}`
-      );
+        )}** vs **${returnRoleNameWithLeastTag(
+          participatingTeams[i + 1][0]
+        )}**\n`;
+
+        // log
+
+        console.log(
+          `- **${returnRoleNameWithLeastTag(
+            participatingTeams[i][0]
+          )}** vs **${returnRoleNameWithLeastTag(
+            participatingTeams[i + 1][0]
+          )}**`
+        );
+      }
     }
 
     if (excludedTeam) {
-      matchMessage += `**${returnRoleNameWithLeastTag(
+      matchMessage += `- **${returnRoleNameWithLeastTag(
         excludedTeam
-      )}** はチーム数が奇数のため、マッチングしませんでした\n`;
-      console.log(
-        `timeStamp: ${
-          participatingTeams[participatingTeams.length - 1][1]
-        } team: ${returnRoleNameWithLeastTag(excludedTeam)}`
-      );
+      )}** は参加人数が奇数だったためマッチングしませんでした\n`;
     }
 
+    // log部分
+
+    // @メンションを追加
     for (const team of participatingTeams) {
       matchMessage += `<@&${team[0].id}>\n`;
     }

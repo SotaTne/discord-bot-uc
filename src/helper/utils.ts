@@ -2,8 +2,8 @@ import { Guild, Role, GuildMember } from "discord.js";
 import { isCreatedAndIsAtTimeRole } from "./role-name-helper.js";
 
 // 挙手受付可能な時間帯（24時間制）
-export const startOclocks = new Set([21, 22, 23]); // デフォルトは[ 21, 22, 23]
-export const startRecruitment = 12; // デフォルトは12
+export const startOclocks = new Set([12, 21, 22, 23]); // デフォルトは[ 21, 22, 23]
+export const startRecruitment = 11; // デフォルトは12
 export const acceptRolls: Set<string> = new Set([
   "KMU",
   "UT",
@@ -21,7 +21,7 @@ export const acceptRolls: Set<string> = new Set([
   "tym",
 ]);
 export const leastRoleName = "試合数5";
-export const startBeforeLimitMinutes = 7; //デフォルトは7
+export const startBeforeLimitMinutes = 10; //デフォルトは7
 export const roleHeader = "time:";
 
 export const PORT: number = process.env.PORT
