@@ -21,7 +21,7 @@ export const acceptRolls: Set<string> = new Set([
   "tym",
 ]);
 export const leastRoleName = "試合数5";
-export const startBeforeLimitMinutes = 10; //デフォルトは7
+export const startBeforeLimitMinutes = 7; //デフォルトは7
 export const roleHeader = "time:";
 
 export const PORT: number = process.env.PORT
